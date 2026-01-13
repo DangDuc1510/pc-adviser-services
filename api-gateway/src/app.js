@@ -1,0 +1,136 @@
+require("dotenv").config();
+
+const express = require("express");
+const rateLimit = require("express-rate-limit");
+const { createProxyMiddleware } = require("http-proxy-middleware");
+const morgan = require("morgan");
+const cors = require("cors");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(morgan("dev"));
+app.use(
+  rateLimit({
+    windowMs: process.env.API_RATE_LIMIT_WINDOW_MS || 60 * 1000,
+    max: process.env.API_RATE_LIMIT_MAX_REQUESTS || 100,
+    message: "Too many requests from this IP, please try again later.",
+  })
+);
+
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(",") || [],
+    credentials: true,
+  })
+);
+
+app.get("/health", (req, res) => {
+  res.json({
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    service: "API Gateway",
+  });
+});
+
+const services = {
+  identity: process.env.IDENTITY_SERVICE_URL || "http://localhost:3001",
+  product: process.env.PRODUCT_SERVICE_URL || "http://localhost:3002",
+  order: process.env.ORDER_SERVICE_URL || "http://localhost:3003",
+  smartBuilder:
+    process.env.SMART_BUILDER_SERVICE_URL || "http://localhost:3004",
+  chatbot: process.env.CHATBOT_SERVICE_URL || "http://localhost:3005",
+  search: process.env.SEARCH_SERVICE_URL || "http://localhost:3006",
+  system: process.env.SYSTEM_SERVICE_URL || "http://localhost:3007",
+  voucher: process.env.VOUCHER_SERVICE_URL || "http://localhost:3008",
+};
+
+const createProxy = (target, routeName, options = {}) => {
+  const {
+    enableLogging = false,
+    onProxyReq: customOnProxyReq,
+    onProxyRes: customOnProxyRes,
+  } = options;
+
+  return createProxyMiddleware({
+    target,
+    changeOrigin: true,
+    onError: (err, req, res) => {
+      console.error(`Proxy error for ${routeName}:`, err.message);
+      res.status(503).json({
+        error: "Service unavailable",
+        message: `Cannot connect to service`,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    onProxyReq: (proxyReq, req, res) => {
+      if (enableLogging) {
+        console.log(
+          `→ Proxying ${req.method} ${req.url} to ${target}${req.url}`
+        );
+      }
+      if (customOnProxyReq) {
+        customOnProxyReq(proxyReq, req, res);
+      }
+    },
+    onProxyRes: (proxyRes, req, res) => {
+      if (enableLogging) {
+        console.log(`← Response from ${target}: ${proxyRes.statusCode}`);
+        console.log("-".repeat(50));
+      }
+      if (customOnProxyRes) {
+        customOnProxyRes(proxyRes, req, res);
+      }
+    },
+    secure: false,
+    logLevel: "silent",
+  });
+};
+
+const setupRoutes = (routes, target, options = {}) => {
+  routes.forEach((route) => {
+    app.use(route, createProxy(target, route, options));
+  });
+};
+setupRoutes(["/auth", "/user", "/customers", "/behavior"], services.identity, {
+  enableLogging: true,
+});
+
+setupRoutes(
+  ["/products", "/categories", "/brands", "/product-groups"],
+  services.product
+);
+
+setupRoutes(["/orders", "/cart", "/payment"], services.order, {
+  enableLogging: true,
+});
+
+setupRoutes(
+  [
+    "/voucher-rules",
+    "/voucher-distributions",
+    "/voucher-triggers",
+    "/promo-codes",
+  ],
+  services.voucher,
+  { enableLogging: true }
+);
+
+setupRoutes(["/recommendations", "/segmentation"], services.smartBuilder, {
+  enableLogging: true,
+});
+
+setupRoutes(["/chat"], services.chatbot, { enableLogging: true });
+
+setupRoutes(["/search"], services.search, { enableLogging: true });
+
+setupRoutes(["/statistics"], services.system, { enableLogging: true });
+
+app.listen(PORT, () => {
+  console.log("🚀 PC Adviser API Gateway started successfully!");
+  console.log(`📡 Running on http://localhost:${PORT}`);
+  console.log(`💡 Health check: http://localhost:${PORT}/health`);
+  console.log("=".repeat(50));
+});
+
+module.exports = app;

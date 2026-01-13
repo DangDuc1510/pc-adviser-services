@@ -1,0 +1,409 @@
+services:
+  # Note: MongoDB Atlas is used instead of local MongoDB container
+  # All services connect to MongoDB Atlas via MONGO_URI environment variables
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: pc-adviser-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 600s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: redis-server --appendonly yes
+
+  # Elasticsearch for Search Service
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: pc-adviser-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 600s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Identity Service
+  identity-service:
+    build:
+      context: ./identity-service
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-identity-service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: ${IDENTITY_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
+      JWT_SECRET: ${JWT_SECRET:-ducbd1510}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      ORDER_SERVICE_URL: http://order-service:3003
+      SYSTEM_SERVICE_URL: http://system-service:3007
+      VOUCHER_SERVICE_URL: http://voucher-service:3008
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4001}
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-cloudinary://762612891411269:phYTZX1Ph9Q4syZWoe7VRYDqXf0@dxstpnc1n}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-60000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-200}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Product Service
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-product-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: ${PRODUCT_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-cloudinary://762612891411269:phYTZX1Ph9Q4syZWoe7VRYDqXf0@dxstpnc1n}
+      JWT_SECRET: ${JWT_SECRET:-ducbd1510}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-60000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-200}
+      UPLOAD_PATH: ${UPLOAD_PATH:-./uploads}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
+      IMAGE_QUALITY: ${IMAGE_QUALITY:-85}
+      THUMBNAIL_ENABLED: ${THUMBNAIL_ENABLED:-true}
+      CACHE_TTL: ${CACHE_TTL:-3600}
+      CACHE_MAX_SIZE: ${CACHE_MAX_SIZE:-1000}
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Order Service
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-order-service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: ${ORDER_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:3000,http://localhost:3001}
+      JWT_SECRET: ${JWT_SECRET:-ducbd1510}
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      IDENTITY_SERVICE_URL: http://identity-service:3001
+      VOUCHER_SERVICE_URL: http://voucher-service:3008
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4001}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      VNP_TMN_CODE: ${VNP_TMN_CODE:-FTBW7SJ9}
+      VNP_HASH_SECRET: ${VNP_HASH_SECRET:-LSEF047PHY43X3I6B1UVA72MNKVYD00C}
+      VNP_URL: ${VNP_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+      VNP_API: ${VNP_API:-https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}
+      VNP_RETURN_URL: ${VNP_RETURN_URL:-http://localhost:3003/payment/vnpay/return}
+    depends_on:
+      product-service:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3003/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Smart Builder Service
+  smart-builder-service:
+    build:
+      context: ./smart-builder-service
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-smart-builder-service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: ${SMART_BUILDER_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:3000,http://localhost:3001}
+      JWT_SECRET: ${JWT_SECRET:-ducbd1510}
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      IDENTITY_SERVICE_URL: http://identity-service:3001
+      ORDER_SERVICE_URL: http://order-service:3003
+      VOUCHER_SERVICE_URL: http://voucher-service:3008
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CACHE_TTL_USER_PREFERENCES: ${CACHE_TTL_USER_PREFERENCES:-3600}
+      CACHE_TTL_RECOMMENDATIONS: ${CACHE_TTL_RECOMMENDATIONS:-1800}
+      CACHE_TTL_SIMILARITY_MATRIX: ${CACHE_TTL_SIMILARITY_MATRIX:-86400}
+    depends_on:
+      redis:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3004/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Chatbot Service
+  chatbot-service:
+    build:
+      context: ./chatbot-service
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-chatbot-service
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      NODE_ENV: ${NODE_ENV:-production}
+      MONGO_URI: ${CHATBOT_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/chatbot_db}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4}
+      OPENAI_MAX_TOKENS: ${OPENAI_MAX_TOKENS:-1000}
+      OPENAI_TEMPERATURE: ${OPENAI_TEMPERATURE:-0.7}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+      BUILDER_SERVICE_URL: http://smart-builder-service:3004
+      JWT_SECRET: ${JWT_SECRET:-your_super_secret_jwt_key_here_change_this_in_production}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3005/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Search Service
+  search-service:
+    build:
+      context: ./search-service
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-search-service
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    environment:
+      PORT: 3006
+      NODE_ENV: ${NODE_ENV:-development}
+      ELASTICSEARCH_NODE: http://elasticsearch:9200
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-products}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      CACHE_TTL: ${CACHE_TTL:-900}
+      SEARCH_MAX_RESULTS: ${SEARCH_MAX_RESULTS:-100}
+      SEARCH_DEFAULT_SIZE: ${SEARCH_DEFAULT_SIZE:-20}
+      SEARCH_MAX_SIZE: ${SEARCH_MAX_SIZE:-100}
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3006/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # System Service
+  system-service:
+    build:
+      context: ./system-service
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-system-service
+    restart: unless-stopped
+    ports:
+      - "3007:3007"
+    environment:
+      PORT: 3007
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: ${SYSTEM_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_TTL: ${REDIS_TTL:-900}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-duc.bd1510@gmail.com}
+      SMTP_PASS: ${SMTP_PASS:-obqpwazhauxaqvng}
+      EMAIL_FROM: ${EMAIL_FROM:-duc.bd1510@gmail.com}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-PC Adviser}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      CACHE_TTL: ${CACHE_TTL:-900}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://localhost:5672}
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-false}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3007/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Voucher Service
+  voucher-service:
+    build:
+      context: ./voucher-service
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-voucher-service
+    restart: unless-stopped
+    ports:
+      - "3008:3008"
+    environment:
+      PORT: 3008
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: ${VOUCHER_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      JWT_SECRET: ${JWT_SECRET:-ducbd1510}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      ORDER_SERVICE_URL: http://order-service:3003
+      IDENTITY_SERVICE_URL: http://identity-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-cloudinary://762612891411269:phYTZX1Ph9Q4syZWoe7VRYDqXf0@dxstpnc1n}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-60000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-200}
+    depends_on:
+      order-service:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3008/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: ../Dockerfile
+    container_name: pc-adviser-api-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-dev}
+      IDENTITY_SERVICE_URL: http://identity-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+      SMART_BUILDER_SERVICE_URL: http://smart-builder-service:3004
+      CHATBOT_SERVICE_URL: http://chatbot-service:3005
+      SEARCH_SERVICE_URL: http://search-service:3006
+      SYSTEM_SERVICE_URL: http://system-service:3007
+      VOUCHER_SERVICE_URL: http://voucher-service:3008
+      JWT_SECRET: ${JWT_SECRET:-dangduc1510}
+      API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS:-60000}
+      API_RATE_LIMIT_MAX_REQUESTS: ${API_RATE_LIMIT_MAX_REQUESTS:-1000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      identity-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      smart-builder-service:
+        condition: service_healthy
+      chatbot-service:
+        condition: service_healthy
+      search-service:
+        condition: service_healthy
+      system-service:
+        condition: service_healthy
+      voucher-service:
+        condition: service_healthy
+    networks:
+      - pc-adviser-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 600s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  pc-adviser-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  elasticsearch_data:

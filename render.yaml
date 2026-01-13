@@ -1,0 +1,332 @@
+services:
+  # API Gateway
+  - type: web
+    name: pc-adviser-api-gateway
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./api-gateway
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: IDENTITY_SERVICE_URL
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: SMART_BUILDER_SERVICE_URL
+        sync: false
+      - key: CHATBOT_SERVICE_URL
+        sync: false
+      - key: SEARCH_SERVICE_URL
+        sync: false
+      - key: SYSTEM_SERVICE_URL
+        sync: false
+      - key: VOUCHER_SERVICE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: API_RATE_LIMIT_WINDOW_MS
+        value: 60000
+      - key: API_RATE_LIMIT_MAX_REQUESTS
+        value: 1000
+      - key: CORS_ORIGIN
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+
+  # Identity Service
+  - type: web
+    name: pc-adviser-identity-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./identity-service
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pc-adviser-redis
+          property: connectionString
+      - key: CORS_ORIGIN
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: SYSTEM_SERVICE_URL
+        sync: false
+      - key: VOUCHER_SERVICE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+
+  # Product Service
+  - type: web
+    name: pc-adviser-product-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./product-service
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3002
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+
+  # Order Service
+  - type: web
+    name: pc-adviser-order-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./order-service
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3003
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: IDENTITY_SERVICE_URL
+        sync: false
+      - key: VOUCHER_SERVICE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: VNP_TMN_CODE
+        sync: false
+      - key: VNP_HASH_SECRET
+        sync: false
+      - key: VNP_URL
+        sync: false
+      - key: VNP_API
+        sync: false
+      - key: VNP_RETURN_URL
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+
+  # Smart Builder Service
+  - type: web
+    name: pc-adviser-smart-builder-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./smart-builder-service
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3004
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pc-adviser-redis
+          property: connectionString
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: IDENTITY_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: VOUCHER_SERVICE_URL
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+
+  # Chatbot Service
+  - type: web
+    name: pc-adviser-chatbot-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./chatbot-service
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3005
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pc-adviser-redis
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4
+      - key: OPENAI_MAX_TOKENS
+        value: 1000
+      - key: OPENAI_TEMPERATURE
+        value: 0.7
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: BUILDER_SERVICE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+    healthCheckPath: /health
+
+  # Search Service
+  - type: web
+    name: pc-adviser-search-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./search-service
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3006
+      - key: NODE_ENV
+        value: production
+      - key: ELASTICSEARCH_NODE
+        sync: false
+      - key: ELASTICSEARCH_INDEX
+        value: products
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pc-adviser-redis
+          property: connectionString
+      - key: PRODUCT_SERVICE_URL
+        fromService:
+          type: web
+          name: pc-adviser-product-service
+          property: host
+      - key: LOG_LEVEL
+        value: info
+      - key: CACHE_ENABLED
+        value: "true"
+      - key: CACHE_TTL
+        value: 900
+    healthCheckPath: /health
+
+  # System Service
+  - type: web
+    name: pc-adviser-system-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./system-service
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3007
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pc-adviser-redis
+          property: connectionString
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: EMAIL_FROM_NAME
+        value: PC Adviser
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+
+  # Voucher Service
+  - type: web
+    name: pc-adviser-voucher-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./voucher-service
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 3008
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pc-adviser-redis
+          property: connectionString
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: IDENTITY_SERVICE_URL
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+
+  # Redis Cache
+  - type: redis
+    name: pc-adviser-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
