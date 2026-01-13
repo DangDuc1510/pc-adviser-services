@@ -3,7 +3,7 @@ services:
   - type: web
     name: pc-adviser-api-gateway
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./api-gateway/Dockerfile
     dockerContext: ./api-gateway
     plan: starter
     envVars:
@@ -43,7 +43,7 @@ services:
   - type: web
     name: pc-adviser-identity-service
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./identity-service/Dockerfile
     dockerContext: ./identity-service
     plan: starter
     envVars:
@@ -82,7 +82,7 @@ services:
   - type: web
     name: pc-adviser-product-service
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./product-service/Dockerfile
     dockerContext: ./product-service
     plan: starter
     envVars:
@@ -106,7 +106,7 @@ services:
   - type: web
     name: pc-adviser-order-service
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./order-service/Dockerfile
     dockerContext: ./order-service
     plan: starter
     envVars:
@@ -146,7 +146,7 @@ services:
   - type: web
     name: pc-adviser-smart-builder-service
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./smart-builder-service/Dockerfile
     dockerContext: ./smart-builder-service
     plan: starter
     envVars:
@@ -181,7 +181,7 @@ services:
   - type: web
     name: pc-adviser-chatbot-service
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./chatbot-service/Dockerfile
     dockerContext: ./chatbot-service
     plan: starter
     envVars:
@@ -220,7 +220,7 @@ services:
   - type: web
     name: pc-adviser-search-service
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./search-service/Dockerfile
     dockerContext: ./search-service
     plan: starter
     envVars:
@@ -254,7 +254,7 @@ services:
   - type: web
     name: pc-adviser-system-service
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./system-service/Dockerfile
     dockerContext: ./system-service
     plan: starter
     envVars:
@@ -291,7 +291,7 @@ services:
   - type: web
     name: pc-adviser-voucher-service
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./voucher-service/Dockerfile
     dockerContext: ./voucher-service
     plan: starter
     envVars:
