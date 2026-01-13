@@ -10,9 +10,9 @@ COPY package.json ./
 COPY package-lock.json* ./
 # Use npm install if package-lock.json doesn't exist, otherwise use npm ci
 RUN if [ -f package-lock.json ]; then \
-      npm ci --omit=dev && npm cache clean --force; \
+    npm ci --omit=dev && npm cache clean --force; \
     else \
-      npm install --omit=dev && npm cache clean --force; \
+    npm install --omit=dev && npm cache clean --force; \
     fi
 
 # Build stage
@@ -24,9 +24,9 @@ COPY package.json ./
 COPY package-lock.json* ./
 # Use npm install if package-lock.json doesn't exist, otherwise use npm ci
 RUN if [ -f package-lock.json ]; then \
-      npm ci; \
+    npm ci; \
     else \
-      npm install; \
+    npm install; \
     fi
 
 # Copy source code
