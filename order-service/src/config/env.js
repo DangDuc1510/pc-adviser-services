@@ -10,22 +10,31 @@ const config = {
   // JWT
   JWT_SECRET: process.env.JWT_SECRET || "your_jwt_secret_here",
 
-  // Product Service
+  // Product Service - Normalize URL (add https:// if missing protocol)
   PRODUCT_SERVICE_URL: (() => {
     const url = process.env.PRODUCT_SERVICE_URL || "http://localhost:3002";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3002";
+    return url.startsWith("http://") || url.startsWith("https://") 
+      ? url 
+      : `https://${url}`;
   })(),
 
-  // Identity Service
+  // Identity Service - Normalize URL
   IDENTITY_SERVICE_URL: (() => {
     const url = process.env.IDENTITY_SERVICE_URL || "http://localhost:3001";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3001";
+    return url.startsWith("http://") || url.startsWith("https://") 
+      ? url 
+      : `https://${url}`;
   })(),
 
-  // Voucher Service
+  // Voucher Service - Normalize URL
   VOUCHER_SERVICE_URL: (() => {
     const url = process.env.VOUCHER_SERVICE_URL || "http://localhost:3008";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3008";
+    return url.startsWith("http://") || url.startsWith("https://") 
+      ? url 
+      : `https://${url}`;
   })(),
 
   // CORS

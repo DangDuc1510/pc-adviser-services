@@ -35,18 +35,27 @@ const config = {
   // Message constraints
   MESSAGE_MAX_LENGTH: parseInt(process.env.MESSAGE_MAX_LENGTH) || 1000,
 
-  // Service URLs for integration
+  // Service URLs for integration - Normalize URLs (add https:// if missing protocol)
   PRODUCT_SERVICE_URL: (() => {
     const url = process.env.PRODUCT_SERVICE_URL || "http://localhost:3002";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3002";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
   })(),
   ORDER_SERVICE_URL: (() => {
     const url = process.env.ORDER_SERVICE_URL || "http://localhost:3003";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3003";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
   })(),
   BUILDER_SERVICE_URL: (() => {
     const url = process.env.BUILDER_SERVICE_URL || "http://localhost:3004";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3004";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
   })(),
 
   // JWT (optional for authenticated users)

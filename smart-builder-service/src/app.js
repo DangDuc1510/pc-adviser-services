@@ -85,8 +85,12 @@ const startServer = async () => {
     // Connect to MongoDB
     await connectDatabase();
 
-    // Connect to Redis (optional)
-    await connectRedis();
+    // Connect to Redis (optional - don't fail if unavailable)
+    try {
+      await connectRedis();
+    } catch (redisErr) {
+      logger.warn('Redis connection failed, continuing without cache:', redisErr.message);
+    }
 
     // Start listening
     app.listen(config.PORT, () => {

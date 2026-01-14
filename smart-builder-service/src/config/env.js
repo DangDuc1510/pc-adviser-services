@@ -15,22 +15,34 @@ const config = {
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || "",
   REDIS_URL: process.env.REDIS_URL || null,
 
-  // External Services
+  // External Services - Normalize URLs (add https:// if missing protocol)
   PRODUCT_SERVICE_URL: (() => {
     const url = process.env.PRODUCT_SERVICE_URL || "http://localhost:3003";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3003";
+    return url.startsWith("http://") || url.startsWith("https://") 
+      ? url 
+      : `https://${url}`;
   })(),
   IDENTITY_SERVICE_URL: (() => {
     const url = process.env.IDENTITY_SERVICE_URL || "http://localhost:3001";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3001";
+    return url.startsWith("http://") || url.startsWith("https://") 
+      ? url 
+      : `https://${url}`;
   })(),
   ORDER_SERVICE_URL: (() => {
     const url = process.env.ORDER_SERVICE_URL || "http://localhost:3004";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3004";
+    return url.startsWith("http://") || url.startsWith("https://") 
+      ? url 
+      : `https://${url}`;
   })(),
   VOUCHER_SERVICE_URL: (() => {
     const url = process.env.VOUCHER_SERVICE_URL || "http://localhost:3008";
-    return url.startsWith("http") ? url : `https://${url}`;
+    if (!url || url.trim() === "") return "http://localhost:3008";
+    return url.startsWith("http://") || url.startsWith("https://") 
+      ? url 
+      : `https://${url}`;
   })(),
 
   // JWT

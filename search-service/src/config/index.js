@@ -69,7 +69,10 @@ const config = {
   productService: {
     url: (() => {
       const url = value.PRODUCT_SERVICE_URL;
-      return url.startsWith("http") ? url : `https://${url}`;
+      if (!url || url.trim() === "") return "http://localhost:3002";
+      return url.startsWith("http://") || url.startsWith("https://") 
+        ? url 
+        : `https://${url}`;
     })(),
   },
 

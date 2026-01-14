@@ -19,7 +19,9 @@ const connectRedis = async () => {
     console.log('Redis connected successfully');
   } catch (err) {
     console.error('Failed to connect to Redis', err);
-    throw err;
+    console.warn('Continuing without Redis cache - service will still function');
+    // Don't throw - allow service to start without Redis
+    // client = null; // Disable client if connection fails
   }
 };
 
