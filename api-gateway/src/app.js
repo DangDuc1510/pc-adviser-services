@@ -10,8 +10,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Trust proxy - required when running behind a reverse proxy (like Render)
+// Set to 1 to trust only the first proxy hop (Render's load balancer)
 // This allows Express to read X-Forwarded-For header correctly
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 
 app.use(morgan("dev"));
 app.use(
@@ -19,6 +20,8 @@ app.use(
     windowMs: process.env.API_RATE_LIMIT_WINDOW_MS || 60 * 1000,
     max: process.env.API_RATE_LIMIT_MAX_REQUESTS || 100,
     message: "Too many requests from this IP, please try again later.",
+    // Disable validation warning since we're explicitly trusting only 1 proxy hop
+    validate: false,
   })
 );
 
