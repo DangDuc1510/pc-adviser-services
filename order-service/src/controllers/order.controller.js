@@ -119,8 +119,8 @@ const getOrders = async (req, res, next) => {
     if (deviceFingerprint && !targetUserId) {
       try {
         const axios = require("axios");
-        const identityServiceUrl =
-          process.env.IDENTITY_SERVICE_URL || "http://localhost:3001";
+        const config = require("../config/env");
+        const identityServiceUrl = config.IDENTITY_SERVICE_URL;
 
         // Find customer by deviceFingerprint
         const customersResponse = await axios.get(

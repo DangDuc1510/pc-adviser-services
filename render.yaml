@@ -12,21 +12,45 @@ services:
       - key: NODE_ENV
         value: production
       - key: IDENTITY_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-identity-service
+          property: host
       - key: PRODUCT_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-product-service
+          property: host
       - key: ORDER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-order-service
+          property: host
       - key: SMART_BUILDER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-smart-builder-service
+          property: host
       - key: CHATBOT_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-chatbot-service
+          property: host
       - key: SEARCH_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-search-service
+          property: host
       - key: SYSTEM_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-system-service
+          property: host
       - key: VOUCHER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-voucher-service
+          property: host
       - key: JWT_SECRET
         sync: false
       - key: API_RATE_LIMIT_WINDOW_MS
@@ -66,11 +90,20 @@ services:
       - key: CORS_ORIGIN
         sync: false
       - key: ORDER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-order-service
+          property: host
       - key: SYSTEM_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-system-service
+          property: host
       - key: VOUCHER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-voucher-service
+          property: host
       - key: FRONTEND_URL
         sync: false
       - key: CLOUDINARY_URL
@@ -122,11 +155,20 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: PRODUCT_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-product-service
+          property: host
       - key: IDENTITY_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-identity-service
+          property: host
       - key: VOUCHER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-voucher-service
+          property: host
       - key: FRONTEND_URL
         sync: false
       - key: VNP_TMN_CODE
@@ -167,15 +209,33 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: PRODUCT_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-product-service
+          property: host
       - key: IDENTITY_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-identity-service
+          property: host
       - key: ORDER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-order-service
+          property: host
       - key: VOUCHER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-voucher-service
+          property: host
       - key: LOG_LEVEL
         value: info
+      - key: CACHE_TTL_USER_PREFERENCES
+        value: "3600"
+      - key: CACHE_TTL_RECOMMENDATIONS
+        value: "1800"
+      - key: CACHE_TTL_SIMILARITY_MATRIX
+        value: "86400"
     healthCheckPath: /health
 
   # Chatbot Service
@@ -208,13 +268,32 @@ services:
       - key: CORS_ORIGIN
         sync: false
       - key: PRODUCT_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-product-service
+          property: host
       - key: ORDER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-order-service
+          property: host
       - key: BUILDER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-smart-builder-service
+          property: host
       - key: JWT_SECRET
         sync: false
+      - key: REDIS_SESSION_TTL
+        value: "3600"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "20"
+      - key: MESSAGE_MAX_LENGTH
+        value: "1000"
+      - key: SESSION_EXPIRE_SECONDS
+        value: "3600"
     healthCheckPath: /health
 
   # Search Service
@@ -249,6 +328,12 @@ services:
         value: "true"
       - key: CACHE_TTL
         value: 900
+      - key: SEARCH_MAX_RESULTS
+        value: "100"
+      - key: SEARCH_DEFAULT_SIZE
+        value: "20"
+      - key: SEARCH_MAX_SIZE
+        value: "100"
     healthCheckPath: /health
 
   # System Service
@@ -286,6 +371,14 @@ services:
         value: PC Adviser
       - key: LOG_LEVEL
         value: info
+      - key: CACHE_ENABLED
+        value: "true"
+      - key: CACHE_TTL
+        value: "900"
+      - key: RABBITMQ_URL
+        sync: false
+      - key: PROMETHEUS_ENABLED
+        value: "false"
     healthCheckPath: /health
 
   # Voucher Service
@@ -314,15 +407,28 @@ services:
           name: pc-adviser-redis
           property: connectionString
       - key: ORDER_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-order-service
+          property: host
       - key: IDENTITY_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-identity-service
+          property: host
       - key: PRODUCT_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: pc-adviser-product-service
+          property: host
       - key: CLOUDINARY_URL
         sync: false
       - key: LOG_LEVEL
         value: info
+      - key: RATE_LIMIT_WINDOW
+        value: "60000"
+      - key: RATE_LIMIT_MAX
+        value: "200"
     healthCheckPath: /health
 
   # Redis Cache

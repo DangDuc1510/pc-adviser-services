@@ -326,7 +326,8 @@ console.log("cartItemsForCoupon", cartItemsForCoupon);
     // Trigger voucher for order placed (async, don't wait)
     try {
       const axios = require('axios');
-      const voucherServiceUrl = process.env.VOUCHER_SERVICE_URL || 'http://localhost:3008';
+      const config = require('../config/env');
+      const voucherServiceUrl = config.VOUCHER_SERVICE_URL;
       axios.post(`${voucherServiceUrl}/voucher-triggers/order-placed`, {
         userId: userId.toString(),
         orderId: order._id.toString()

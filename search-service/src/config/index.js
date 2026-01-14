@@ -67,7 +67,10 @@ const config = {
   },
 
   productService: {
-    url: value.PRODUCT_SERVICE_URL,
+    url: (() => {
+      const url = value.PRODUCT_SERVICE_URL;
+      return url.startsWith("http") ? url : `https://${url}`;
+    })(),
   },
 
   logging: {

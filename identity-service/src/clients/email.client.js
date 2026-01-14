@@ -1,9 +1,9 @@
 const axios = require("axios");
+const config = require("../config/env");
 
 class EmailClient {
   constructor() {
-    this.baseURL =
-      process.env.SYSTEM_SERVICE_URL || "http://localhost:3007";
+    this.baseURL = config.SYSTEM_SERVICE_URL;
   }
 
   /**
@@ -15,7 +15,7 @@ class EmailClient {
    */
   async sendPasswordResetEmail(to, resetToken, userName = null) {
     try {
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:4001";
+      const frontendUrl = config.FRONTEND_URL;
       const resetLink = `${frontendUrl}/dat-lai-mat-khau?token=${resetToken}`;
 
       const emailHtml = this.getPasswordResetEmailTemplate(

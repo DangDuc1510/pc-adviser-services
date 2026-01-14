@@ -36,10 +36,18 @@ const config = {
   RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS || 100, // requests per window
 
   // External Services
-  ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL || "http://localhost:3003",
-  SYSTEM_SERVICE_URL: process.env.SYSTEM_SERVICE_URL || "http://localhost:3007",
-  VOUCHER_SERVICE_URL:
-    process.env.VOUCHER_SERVICE_URL || "http://localhost:3008",
+  ORDER_SERVICE_URL: (() => {
+    const url = process.env.ORDER_SERVICE_URL || "http://localhost:3003";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
+  SYSTEM_SERVICE_URL: (() => {
+    const url = process.env.SYSTEM_SERVICE_URL || "http://localhost:3007";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
+  VOUCHER_SERVICE_URL: (() => {
+    const url = process.env.VOUCHER_SERVICE_URL || "http://localhost:3008";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:4001",
 
   // Cloudinary

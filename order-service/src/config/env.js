@@ -11,16 +11,22 @@ const config = {
   JWT_SECRET: process.env.JWT_SECRET || "your_jwt_secret_here",
 
   // Product Service
-  PRODUCT_SERVICE_URL:
-    process.env.PRODUCT_SERVICE_URL || "http://localhost:3002",
+  PRODUCT_SERVICE_URL: (() => {
+    const url = process.env.PRODUCT_SERVICE_URL || "http://localhost:3002";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
 
   // Identity Service
-  IDENTITY_SERVICE_URL:
-    process.env.IDENTITY_SERVICE_URL || "http://localhost:3001",
+  IDENTITY_SERVICE_URL: (() => {
+    const url = process.env.IDENTITY_SERVICE_URL || "http://localhost:3001";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
 
   // Voucher Service
-  VOUCHER_SERVICE_URL:
-    process.env.VOUCHER_SERVICE_URL || "http://localhost:3008",
+  VOUCHER_SERVICE_URL: (() => {
+    const url = process.env.VOUCHER_SERVICE_URL || "http://localhost:3008";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
 
   // CORS
   CORS_ORIGIN: process.env.CORS_ORIGIN

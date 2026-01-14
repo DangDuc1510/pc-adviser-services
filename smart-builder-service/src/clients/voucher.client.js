@@ -4,7 +4,7 @@ const config = require("../config/env");
 
 class VoucherClient {
   constructor() {
-    this.baseURL = config.VOUCHER_SERVICE_URL || "http://localhost:3008";
+    this.baseURL = config.VOUCHER_SERVICE_URL;
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 10000,

@@ -16,12 +16,22 @@ const config = {
   REDIS_URL: process.env.REDIS_URL || null,
 
   // External Services
-  PRODUCT_SERVICE_URL:
-    process.env.PRODUCT_SERVICE_URL || "http://localhost:3003",
-  IDENTITY_SERVICE_URL:
-    process.env.IDENTITY_SERVICE_URL || "http://localhost:3001",
-  ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL || "http://localhost:3004",
-  VOUCHER_SERVICE_URL: process.env.VOUCHER_SERVICE_URL || "http://localhost:3008",
+  PRODUCT_SERVICE_URL: (() => {
+    const url = process.env.PRODUCT_SERVICE_URL || "http://localhost:3003";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
+  IDENTITY_SERVICE_URL: (() => {
+    const url = process.env.IDENTITY_SERVICE_URL || "http://localhost:3001";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
+  ORDER_SERVICE_URL: (() => {
+    const url = process.env.ORDER_SERVICE_URL || "http://localhost:3004";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
+  VOUCHER_SERVICE_URL: (() => {
+    const url = process.env.VOUCHER_SERVICE_URL || "http://localhost:3008";
+    return url.startsWith("http") ? url : `https://${url}`;
+  })(),
 
   // JWT
   JWT_SECRET: process.env.JWT_SECRET || "ducbd1510",

@@ -67,8 +67,8 @@ const getCustomerOrders = async (req, res, next) => {
     const { id } = req.params;
     const customer = await customerService.getCustomerById(id, req.user);
 
-    const orderServiceUrl =
-      process.env.ORDER_SERVICE_URL || "http://localhost:3003";
+    const config = require("../config/env");
+    const orderServiceUrl = config.ORDER_SERVICE_URL;
 
     try {
       // Get orders by userId

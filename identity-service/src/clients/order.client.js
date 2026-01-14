@@ -1,9 +1,10 @@
 const axios = require("axios");
 const { ExternalServiceError } = require("../errors");
+const config = require("../config/env");
 
 class OrderClient {
   constructor() {
-    this.baseURL = process.env.ORDER_SERVICE_URL || "http://localhost:3003";
+    this.baseURL = config.ORDER_SERVICE_URL;
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 10000,
