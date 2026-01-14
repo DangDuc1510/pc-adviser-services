@@ -13,6 +13,7 @@
 Thiết lập các biến môi trường cần thiết trên Render Dashboard. Xem chi tiết trong file `RENDER-SINGLE-CONTAINER.md`.
 
 **Quan trọng**: Tất cả các `*_SERVICE_URL` phải trỏ đến `http://localhost:PORT`:
+
 - `IDENTITY_SERVICE_URL=http://localhost:3001`
 - `PRODUCT_SERVICE_URL=http://localhost:3002`
 - `ORDER_SERVICE_URL=http://localhost:3003`
@@ -25,6 +26,7 @@ Render sẽ tự động build và deploy khi bạn push code lên GitHub.
 ## Kiểm tra
 
 Sau khi deploy thành công:
+
 - Health check: `https://your-service.onrender.com/health`
 - API Gateway: `https://your-service.onrender.com`
 

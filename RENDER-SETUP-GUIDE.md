@@ -17,6 +17,7 @@
 ### Bước 2: Cấu hình Docker
 
 Trong phần **Docker Settings**:
+
 - **Dockerfile Path**: `./Dockerfile`
 - **Docker Context**: `.` (dấu chấm, nghĩa là root directory)
 
@@ -85,6 +86,7 @@ FRONTEND_URL=https://your-frontend-domain.com
 ### Bước 4: Health Check
 
 Trong phần **Health Check**:
+
 - **Health Check Path**: `/health`
 
 ### Bước 5: Deploy
@@ -113,11 +115,14 @@ Nếu bạn đã có service `pc-adviser-services`:
 
 Sau khi deploy thành công:
 
-1. **Health Check**: 
+1. **Health Check**:
+
    ```
    https://your-service-name.onrender.com/health
    ```
+
    Kết quả mong đợi:
+
    ```json
    {
      "status": "OK",
@@ -127,6 +132,7 @@ Sau khi deploy thành công:
    ```
 
 2. **Test API Gateway**:
+
    ```
    https://your-service-name.onrender.com
    ```
@@ -142,21 +148,76 @@ Sau khi deploy thành công:
 ## Troubleshooting
 
 ### Build Failed: "package.json not found"
+
 - ✅ Đảm bảo Dockerfile Path là `./Dockerfile`
 - ✅ Đảm bảo Docker Context là `.` (root)
 - ✅ Kiểm tra tất cả services có `package.json`
 
 ### Services không start
+
 - Kiểm tra logs trên Render Dashboard
 - Đảm bảo tất cả environment variables đã được set
 - Kiểm tra MongoDB và Redis connection strings
 
 ### Services không giao tiếp được
+
 - ✅ Đảm bảo tất cả `*_SERVICE_URL` trỏ đến `http://localhost:PORT`
 - ✅ Không dùng `http://service-name:PORT` (chỉ dùng trong Docker Compose)
 - ✅ Kiểm tra các services đã start chưa bằng cách xem logs
 
+### Lỗi "Service unavailable" / "Cannot connect to service"
+
+Lỗi này xảy ra khi API Gateway không thể kết nối đến một service cụ thể (ví dụ: Product Service).
+
+**Nguyên nhân thường gặp:**
+
+1. **Service chưa start hoặc đã crash:**
+
+   - Kiểm tra logs trên Render Dashboard
+   - Tìm log của service bị lỗi (ví dụ: Product Service)
+   - Xem có lỗi MongoDB connection không
+
+2. **MongoDB connection string sai hoặc chưa set:**
+
+   - Kiểm tra `MONGO_URI` trong Environment Variables
+   - Đảm bảo MongoDB connection string đúng format
+   - Test MongoDB connection từ local machine
+
+3. **Service chưa sẵn sàng khi API Gateway start:**
+
+   - Script start đã được cải thiện để đợi services sẵn sàng
+   - Nếu vẫn gặp lỗi, có thể cần tăng timeout trong script
+
+4. **Environment variables thiếu:**
+   - Kiểm tra `PRODUCT_SERVICE_URL=http://localhost:3002` đã được set
+   - Kiểm tra các biến bắt buộc khác (MONGO_URI, JWT_SECRET, etc.)
+
+**Cách khắc phục:**
+
+1. **Kiểm tra logs trên Render Dashboard:**
+
+   ```
+   - Vào service → Logs
+   - Tìm log của Product Service
+   - Xem có lỗi MongoDB connection không
+   ```
+
+2. **Kiểm tra health check của từng service:**
+
+   - Product Service: `http://localhost:3002/health` (trong container)
+   - API Gateway: `https://your-service.onrender.com/health`
+
+3. **Kiểm tra Environment Variables:**
+
+   - Đảm bảo `PRODUCT_SERVICE_URL=http://localhost:3002`
+   - Đảm bảo `MONGO_URI` đúng và có quyền truy cập
+
+4. **Redeploy service:**
+   - Sau khi fix environment variables, redeploy service
+   - Đợi vài phút để services start hoàn toàn
+
 ### Port conflicts
+
 - ✅ Chỉ port 3000 được expose ra ngoài
 - ✅ Các port 3001-3008 chỉ dùng trong container (localhost)
 
@@ -182,11 +243,13 @@ Sau khi deploy thành công:
 
 ## Lưu ý quan trọng
 
-1. **Inter-service Communication**: 
+1. **Inter-service Communication**:
+
    - Tất cả services giao tiếp qua `localhost` trong cùng container
    - Không expose port 3001-3008 ra ngoài
 
 2. **Free Tier Limitations**:
+
    - 750 giờ/tháng
    - Sleep sau ~15 phút không có request
    - Cold start ~30-60 giây

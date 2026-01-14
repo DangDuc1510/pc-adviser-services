@@ -9,6 +9,10 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy - required when running behind a reverse proxy (like Render)
+// This allows Express to read X-Forwarded-For header correctly
+app.set("trust proxy", true);
+
 app.use(morgan("dev"));
 app.use(
   rateLimit({

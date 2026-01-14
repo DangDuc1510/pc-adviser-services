@@ -74,14 +74,23 @@ echo "📦 Starting Voucher Service..."
 cd /app/voucher-service && PORT=3008 node src/app.js > /tmp/voucher.log 2>&1 &
 VOUCHER_PID=$!
 
-# Wait for services to be ready (with timeout)
-echo "⏳ Waiting for services to be ready..."
-sleep 10
+# Wait for critical services to be ready
+echo "⏳ Waiting for critical services to be ready..."
+wait_for_service 3001 "Identity Service"
+wait_for_service 3002 "Product Service"
+wait_for_service 3003 "Order Service"
+
+# Wait a bit more for other services (optional but recommended)
+echo "⏳ Waiting for remaining services..."
+sleep 5
 
 # Start API Gateway (port 3000) - main entry point
 echo "🌐 Starting API Gateway..."
 cd /app/api-gateway && PORT=3000 node src/app.js &
 GATEWAY_PID=$!
+
+# Wait for API Gateway to be ready
+wait_for_service 3000 "API Gateway"
 
 echo "✅ All services started!"
 echo "📡 API Gateway running on port 3000"
