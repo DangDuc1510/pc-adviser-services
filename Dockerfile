@@ -66,6 +66,9 @@ COPY --chown=nodejs:nodejs voucher-service ./voucher-service
 COPY --chown=nodejs:nodejs start-all-services.sh ./start-all-services.sh
 RUN chmod +x ./start-all-services.sh
 
+# Ensure /tmp is writable
+RUN chmod 1777 /tmp
+
 USER nodejs
 
 # Port for API Gateway (exposed to Render)
