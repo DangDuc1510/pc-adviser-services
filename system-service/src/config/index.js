@@ -61,7 +61,8 @@ const config = {
     host: value.REDIS_HOST,
     port: value.REDIS_PORT,
     password: value.REDIS_PASSWORD || undefined,
-    url: value.REDIS_URL || `redis://${value.REDIS_HOST}:${value.REDIS_PORT}`,
+    // Only use REDIS_URL in production, fallback to REDIS_HOST only in development
+    url: value.REDIS_URL || (value.NODE_ENV !== 'production' ? `redis://${value.REDIS_HOST}:${value.REDIS_PORT}` : null),
     ttl: value.REDIS_TTL,
   },
 

@@ -13,16 +13,28 @@ const connect = async () => {
   }
 
   try {
-    redis = new Redis({
-      host: config.redis.host,
-      port: config.redis.port,
-      password: config.redis.password,
-      retryStrategy: (times) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
-      },
-      maxRetriesPerRequest: 3,
-    });
+    // Use REDIS_URL if available (for Render/production), otherwise use host/port (for local dev)
+    const redisConfig = config.redis.url 
+      ? { 
+          url: config.redis.url,
+          retryStrategy: (times) => {
+            const delay = Math.min(times * 50, 2000);
+            return delay;
+          },
+          maxRetriesPerRequest: 3,
+        }
+      : {
+          host: config.redis.host,
+          port: config.redis.port,
+          password: config.redis.password,
+          retryStrategy: (times) => {
+            const delay = Math.min(times * 50, 2000);
+            return delay;
+          },
+          maxRetriesPerRequest: 3,
+        };
+    
+    redis = new Redis(redisConfig);
 
     redis.on('connect', () => {
       logger.info('Redis connected');

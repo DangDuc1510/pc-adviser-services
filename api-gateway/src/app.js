@@ -27,8 +27,32 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN?.split(",") || [],
     credentials: true,
+    exposedHeaders: ["ngrok-skip-browser-warning"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "ngrok-skip-browser-warning",
+    ],
   })
 );
+
+// Middleware to bypass ngrok warning page
+// Note: This header needs to be in the REQUEST from client, not response
+// But we add it here as a fallback and also set CORS to allow this header
+app.use((req, res, next) => {
+  // Add header to response (helps with some cases)
+  res.setHeader("ngrok-skip-browser-warning", "true");
+
+  // If request already has the header, forward it
+  if (req.headers["ngrok-skip-browser-warning"]) {
+    res.setHeader(
+      "ngrok-skip-browser-warning",
+      req.headers["ngrok-skip-browser-warning"]
+    );
+  }
+
+  next();
+});
 
 app.get("/health", (req, res) => {
   res.json({
@@ -104,6 +128,9 @@ const createProxy = (target, routeName, options = {}) => {
       });
     },
     onProxyReq: (proxyReq, req, res) => {
+      // Bypass ngrok warning page
+      proxyReq.setHeader("ngrok-skip-browser-warning", "true");
+
       if (enableLogging) {
         console.log(
           `→ Proxying ${req.method} ${req.url} to ${target}${req.url}`
@@ -114,6 +141,9 @@ const createProxy = (target, routeName, options = {}) => {
       }
     },
     onProxyRes: (proxyRes, req, res) => {
+      // Add header to response to bypass ngrok warning page
+      proxyRes.headers["ngrok-skip-browser-warning"] = "true";
+
       if (enableLogging) {
         console.log(`← Response from ${target}: ${proxyRes.statusCode}`);
         console.log("-".repeat(50));

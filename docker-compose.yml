@@ -48,7 +48,7 @@ services:
   identity-service:
     build:
       context: ./identity-service
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-identity-service
     restart: unless-stopped
     ports:
@@ -85,7 +85,7 @@ services:
   product-service:
     build:
       context: ./product-service
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-product-service
     restart: unless-stopped
     ports:
@@ -119,7 +119,7 @@ services:
   order-service:
     build:
       context: ./order-service
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-order-service
     restart: unless-stopped
     ports:
@@ -159,7 +159,7 @@ services:
   smart-builder-service:
     build:
       context: ./smart-builder-service
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-smart-builder-service
     restart: unless-stopped
     ports:
@@ -199,7 +199,7 @@ services:
   chatbot-service:
     build:
       context: ./chatbot-service
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-chatbot-service
     restart: unless-stopped
     ports:
@@ -234,7 +234,7 @@ services:
   search-service:
     build:
       context: ./search-service
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-search-service
     restart: unless-stopped
     ports:
@@ -272,7 +272,7 @@ services:
   system-service:
     build:
       context: ./system-service
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-system-service
     restart: unless-stopped
     ports:
@@ -315,7 +315,7 @@ services:
   voucher-service:
     build:
       context: ./voucher-service
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-voucher-service
     restart: unless-stopped
     ports:
@@ -353,7 +353,7 @@ services:
   api-gateway:
     build:
       context: ./api-gateway
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: pc-adviser-api-gateway
     restart: unless-stopped
     ports:

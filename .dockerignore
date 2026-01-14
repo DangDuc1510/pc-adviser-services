@@ -17,14 +17,3 @@ coverage
 .idea
 docker-compose.yml
 docker-compose.env.example
-docker-start.sh
-docker-stop.sh
-docker-test-api.sh
-docker-check.sh
-DOCKER-CHECK.md
-HEALTHCHECK-EXPLANATION.md
-MONGODB-ATLAS.md
-RENDER-*.md
-render.yaml
-start-all.sh
-stop-all.sh
