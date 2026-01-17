@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { createProxyMiddleware } = require("http-proxy-middleware");
-const cors = require("cors");
+// const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 // Trust proxy - required when running behind a reverse proxy (like Render)
 // Set to 1 to trust only the first proxy hop (Render's load balancer)
 // This allows Express to read X-Forwarded-For header correctly
-app.set("trust proxy", 1);
+// app.set("trust proxy", 1);
 
 app.use(
   rateLimit({
@@ -23,18 +23,23 @@ app.use(
   })
 );
 
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || [],
-    credentials: true,
-    exposedHeaders: ["ngrok-skip-browser-warning"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "ngrok-skip-browser-warning",
-    ],
-  })
-);
+// app.use(
+//   cors({
+//     origin: process.env.CORS_ORIGIN?.split(",") || [
+//       "https://pc-adviser-web.vercel.app",
+//       "https://pc-adviser-cms.vercel.app",
+//       "http://localhost:4000",
+//       "http://localhost:4001",
+//     ],
+//     credentials: true,
+//     exposedHeaders: ["ngrok-skip-browser-warning"],
+//     allowedHeaders: [
+//       "Content-Type",
+//       "Authorization",
+//       "ngrok-skip-browser-warning",
+//     ],
+//   })
+// );
 
 // Middleware to bypass ngrok warning page
 // Note: This header needs to be in the REQUEST from client, not response
@@ -90,10 +95,6 @@ const services = {
   smartBuilder: normalizeServiceUrl(
     process.env.SMART_BUILDER_SERVICE_URL,
     "http://localhost:3004"
-  ),
-  chatbot: normalizeServiceUrl(
-    process.env.CHATBOT_SERVICE_URL,
-    "http://localhost:3005"
   ),
   search: normalizeServiceUrl(
     process.env.SEARCH_SERVICE_URL,
@@ -189,8 +190,6 @@ setupRoutes(
 setupRoutes(["/recommendations", "/segmentation"], services.smartBuilder, {
   enableLogging: true,
 });
-
-setupRoutes(["/chat"], services.chatbot, { enableLogging: true });
 
 setupRoutes(["/search"], services.search, { enableLogging: true });
 

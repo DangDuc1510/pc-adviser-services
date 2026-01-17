@@ -60,7 +60,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-ducbd1510}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pc-adviser-web.vercel.app,https://pc-adviser-cms.vercel.app,http://localhost:4000,http://localhost:4001}
       ORDER_SERVICE_URL: http://order-service:3003
       SYSTEM_SERVICE_URL: http://system-service:3007
       VOUCHER_SERVICE_URL: http://voucher-service:3008
@@ -94,7 +94,7 @@ services:
       PORT: 3002
       NODE_ENV: ${NODE_ENV:-development}
       MONGO_URI: ${PRODUCT_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pc-adviser-web.vercel.app,https://pc-adviser-cms.vercel.app,http://localhost:4000,http://localhost:4001}
       CLOUDINARY_URL: ${CLOUDINARY_URL:-cloudinary://762612891411269:phYTZX1Ph9Q4syZWoe7VRYDqXf0@dxstpnc1n}
       JWT_SECRET: ${JWT_SECRET:-ducbd1510}
       LOG_LEVEL: ${LOG_LEVEL:-info}
@@ -128,7 +128,7 @@ services:
       PORT: 3003
       NODE_ENV: ${NODE_ENV:-development}
       MONGO_URI: ${ORDER_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:3000,http://localhost:3001}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pc-adviser-web.vercel.app,https://pc-adviser-cms.vercel.app,http://localhost:4000,http://localhost:3000,http://localhost:3001}
       JWT_SECRET: ${JWT_SECRET:-ducbd1510}
       PRODUCT_SERVICE_URL: http://product-service:3002
       IDENTITY_SERVICE_URL: http://identity-service:3001
@@ -171,7 +171,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:3000,http://localhost:3001}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pc-adviser-web.vercel.app,https://pc-adviser-cms.vercel.app,http://localhost:4000,http://localhost:3000,http://localhost:3001}
       JWT_SECRET: ${JWT_SECRET:-ducbd1510}
       PRODUCT_SERVICE_URL: http://product-service:3002
       IDENTITY_SERVICE_URL: http://identity-service:3001
@@ -190,41 +190,6 @@ services:
       - pc-adviser-network
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3004/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 600s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Chatbot Service
-  chatbot-service:
-    build:
-      context: ./chatbot-service
-      dockerfile: Dockerfile
-    container_name: pc-adviser-chatbot-service
-    restart: unless-stopped
-    ports:
-      - "3005:3005"
-    environment:
-      PORT: 3005
-      NODE_ENV: ${NODE_ENV:-production}
-      MONGO_URI: ${CHATBOT_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/chatbot_db}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4}
-      OPENAI_MAX_TOKENS: ${OPENAI_MAX_TOKENS:-1000}
-      OPENAI_TEMPERATURE: ${OPENAI_TEMPERATURE:-0.7}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
-      PRODUCT_SERVICE_URL: http://product-service:3002
-      ORDER_SERVICE_URL: http://order-service:3003
-      BUILDER_SERVICE_URL: http://smart-builder-service:3004
-      JWT_SECRET: ${JWT_SECRET:-your_super_secret_jwt_key_here_change_this_in_production}
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - pc-adviser-network
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3005/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 600s
       timeout: 10s
       retries: 3
@@ -286,7 +251,10 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       REDIS_TTL: ${REDIS_TTL:-900}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pc-adviser-web.vercel.app,https://pc-adviser-cms.vercel.app,http://localhost:4000,http://localhost:4001}
+      ORDER_SERVICE_URL: http://order-service:3003
+      IDENTITY_SERVICE_URL: http://identity-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_SECURE: ${SMTP_SECURE:-false}
@@ -301,6 +269,12 @@ services:
       PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-false}
     depends_on:
       redis:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      product-service:
         condition: service_healthy
     networks:
       - pc-adviser-network
@@ -324,7 +298,7 @@ services:
       PORT: 3008
       NODE_ENV: ${NODE_ENV:-development}
       MONGO_URI: ${VOUCHER_MONGO_URI:-mongodb+srv://ducbd1510:151002@ducbd.a8vx9jc.mongodb.net/}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pc-adviser-web.vercel.app,https://pc-adviser-cms.vercel.app,http://localhost:4000,http://localhost:4001}
       JWT_SECRET: ${JWT_SECRET:-ducbd1510}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
@@ -365,14 +339,13 @@ services:
       PRODUCT_SERVICE_URL: http://product-service:3002
       ORDER_SERVICE_URL: http://order-service:3003
       SMART_BUILDER_SERVICE_URL: http://smart-builder-service:3004
-      CHATBOT_SERVICE_URL: http://chatbot-service:3005
       SEARCH_SERVICE_URL: http://search-service:3006
       SYSTEM_SERVICE_URL: http://system-service:3007
       VOUCHER_SERVICE_URL: http://voucher-service:3008
       JWT_SECRET: ${JWT_SECRET:-dangduc1510}
       API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS:-60000}
       API_RATE_LIMIT_MAX_REQUESTS: ${API_RATE_LIMIT_MAX_REQUESTS:-1000}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000,http://localhost:4001}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pc-adviser-web.vercel.app,https://pc-adviser-cms.vercel.app,http://localhost:4000,http://localhost:4001}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     depends_on:
       identity-service:
@@ -382,8 +355,6 @@ services:
       order-service:
         condition: service_healthy
       smart-builder-service:
-        condition: service_healthy
-      chatbot-service:
         condition: service_healthy
       search-service:
         condition: service_healthy

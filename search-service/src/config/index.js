@@ -36,7 +36,7 @@ const configSchema = Joi.object({
   SEARCH_MAX_SIZE: Joi.number().default(100),
 
   // CORS config
-  CORS_ORIGIN: Joi.string().default("http://localhost:4001"),
+  CORS_ORIGIN: Joi.string().default("https://pc-adviser-web.vercel.app,https://pc-adviser-cms.vercel.app,http://localhost:4001"),
 }).unknown();
 
 const { error, value } = configSchema.validate(process.env);
@@ -92,7 +92,11 @@ const config = {
   },
 
   cors: {
-    origin: value.CORS_ORIGIN,
+    origin: value.CORS_ORIGIN ? value.CORS_ORIGIN.split(",") : [
+      "https://pc-adviser-web.vercel.app",
+      "https://pc-adviser-cms.vercel.app",
+      "http://localhost:4001",
+    ],
   },
 };
 

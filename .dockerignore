@@ -4,7 +4,7 @@ npm-debug.log
 .env.local
 .git
 .gitignore
-README.md
+README*.md
 *.md
 .DS_Store
 logs
@@ -17,3 +17,4 @@ coverage
 .idea
 docker-compose.yml
 docker-compose.env.example
+docker-*.sh

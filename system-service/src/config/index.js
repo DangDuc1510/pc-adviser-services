@@ -61,8 +61,8 @@ const config = {
     host: value.REDIS_HOST,
     port: value.REDIS_PORT,
     password: value.REDIS_PASSWORD || undefined,
-    // Only use REDIS_URL in production, fallback to REDIS_HOST only in development
-    url: value.REDIS_URL || (value.NODE_ENV !== 'production' ? `redis://${value.REDIS_HOST}:${value.REDIS_PORT}` : null),
+    // Use REDIS_URL if available, otherwise construct from host/port (for Docker use REDIS_URL)
+    url: value.REDIS_URL || (value.REDIS_HOST && value.REDIS_HOST !== 'localhost' ? `redis://${value.REDIS_HOST}:${value.REDIS_PORT}` : null),
     ttl: value.REDIS_TTL,
   },
 
@@ -76,6 +76,15 @@ const config = {
 
   monitoring: {
     prometheusEnabled: value.PROMETHEUS_ENABLED,
+  },
+
+  cors: {
+    origin: value.CORS_ORIGIN ? value.CORS_ORIGIN.split(",") : [
+      "https://pc-adviser-web.vercel.app",
+      "https://pc-adviser-cms.vercel.app",
+      "http://localhost:4000",
+      "http://localhost:4001",
+    ],
   },
 
   cache: {
