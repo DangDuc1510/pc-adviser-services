@@ -18,9 +18,6 @@ const configSchema = Joi.object({
   REDIS_URL: Joi.string().optional(),
   REDIS_TTL: Joi.number().default(900), // 15 minutes
 
-  // RabbitMQ config (for health check)
-  RABBITMQ_URL: Joi.string().default("amqp://localhost:5672"),
-
   // Logging
   LOG_LEVEL: Joi.string()
     .valid("error", "warn", "info", "debug")
@@ -64,10 +61,6 @@ const config = {
     // Use REDIS_URL if available, otherwise construct from host/port (for Docker use REDIS_URL)
     url: value.REDIS_URL || (value.REDIS_HOST && value.REDIS_HOST !== 'localhost' ? `redis://${value.REDIS_HOST}:${value.REDIS_PORT}` : null),
     ttl: value.REDIS_TTL,
-  },
-
-  rabbitmq: {
-    url: value.RABBITMQ_URL,
   },
 
   logging: {

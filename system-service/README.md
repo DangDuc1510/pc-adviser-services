@@ -7,7 +7,7 @@ System Service provides system monitoring, statistics aggregation, and health ch
 ## Features
 
 - **Statistics Aggregation**: Dashboard statistics and chart data from multiple services
-- **Health Checks**: MongoDB, RabbitMQ, and Redis health monitoring
+- **Health Checks**: MongoDB and Redis health monitoring
 - **Caching**: Redis integration for performance optimization
 - **Email Service**: Send emails using nodemailer with SMTP support
 
@@ -33,7 +33,6 @@ cp env.example .env
 ### Optional Environment Variables
 
 - `REDIS_HOST`, `REDIS_PORT` - Redis configuration
-- `RABBITMQ_URL` - RabbitMQ connection URL (for health check)
 - `LOG_LEVEL` - Logging level (default: info)
 - `CACHE_ENABLED` - Enable/disable Redis cache (default: true)
 - `CACHE_TTL` - Cache TTL in seconds (default: 900)
@@ -65,7 +64,6 @@ npm start
 
 - `GET /health` - General health check
 - `GET /health/mongodb` - MongoDB health
-- `GET /health/rabbitmq` - RabbitMQ health
 - `GET /health/redis` - Redis health
 - `GET /health/all` - Combined health check
 
@@ -121,7 +119,6 @@ npm start
 
 - Express.js - Web framework
 - MongoDB/Mongoose - Database
-- RabbitMQ (amqplib) - Health check only
 - Redis (ioredis) - Caching
 - Winston - Logging
 - Axios - HTTP client for service communication
@@ -129,7 +126,7 @@ npm start
 
 ## Notes
 
-- Service gracefully degrades if RabbitMQ/Redis are unavailable
+- Service gracefully degrades if Redis is unavailable
 - Statistics endpoints require authentication token
 - Health checks are available without authentication
 - Email service requires SMTP configuration. If not configured, email endpoints will return errors

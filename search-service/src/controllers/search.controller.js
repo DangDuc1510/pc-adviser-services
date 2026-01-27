@@ -55,6 +55,7 @@ exports.searchProducts = async (req, res, next) => {
                   "brand^2",
                   "description",
                   "specs",
+                  "category.text^2",
                   "category",
                 ],
                 type: "best_fields",

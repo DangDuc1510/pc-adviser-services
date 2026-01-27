@@ -1,5 +1,4 @@
 const dbConnection = require('../config/database');
-const queueConnection = require('../config/queue');
 const cacheService = require('../services/cache.service');
 const logger = require('../utils/logger');
 
@@ -57,33 +56,6 @@ const mongodbHealth = async (req, res) => {
   }
 };
 
-const rabbitmqHealth = async (req, res) => {
-  try {
-    const isConnected = await queueConnection.testConnection();
-    
-    if (!isConnected) {
-      return res.status(503).json({
-        status: 'unhealthy',
-        service: 'rabbitmq',
-        message: 'Cannot connect to RabbitMQ',
-      });
-    }
-
-    res.status(200).json({
-      status: 'healthy',
-      service: 'rabbitmq',
-      connected: true,
-    });
-  } catch (error) {
-    logger.error('RabbitMQ health check error', { error: error.message });
-    res.status(503).json({
-      status: 'unhealthy',
-      service: 'rabbitmq',
-      error: error.message,
-    });
-  }
-};
-
 const redisHealth = async (req, res) => {
   try {
     const isConnected = await cacheService.ping();
@@ -113,21 +85,17 @@ const redisHealth = async (req, res) => {
 
 const allHealth = async (req, res) => {
   try {
-    const [dbConnected, queueConnected, redisConnected] = await Promise.all([
+    const [dbConnected, redisConnected] = await Promise.all([
       dbConnection.testConnection(),
-      queueConnection.testConnection(),
       cacheService.ping(),
     ]);
 
     const health = {
-      status: dbConnected && queueConnected && redisConnected ? 'healthy' : 'degraded',
+      status: dbConnected && redisConnected ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
       services: {
         mongodb: {
           status: dbConnected ? 'healthy' : 'unhealthy',
-        },
-        rabbitmq: {
-          status: queueConnected ? 'healthy' : 'unhealthy',
         },
         redis: {
           status: redisConnected ? 'healthy' : 'unhealthy',
@@ -150,7 +118,6 @@ const allHealth = async (req, res) => {
 module.exports = {
   healthCheck,
   mongodbHealth,
-  rabbitmqHealth,
   redisHealth,
   allHealth,
 };

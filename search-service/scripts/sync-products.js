@@ -34,12 +34,22 @@ function transformProductToDocument(product) {
     suggest.push(...specs.filter((s) => typeof s === "string"));
   }
 
-  // Extract image URL
+  // Extract image URL - skip base64 strings
   let imageUrl = null;
   if (data.images && Array.isArray(data.images) && data.images.length > 0) {
     const primaryImage =
       data.images.find((img) => img.isPrimary) || data.images[0];
-    imageUrl = primaryImage?.url || primaryImage;
+    const imageValue = primaryImage?.url || primaryImage;
+    // Skip base64 encoded images (they're too large for Elasticsearch)
+    if (imageValue && typeof imageValue === "string" && !imageValue.startsWith("data:")) {
+      imageUrl = imageValue;
+    }
+  }
+  // Also check data.image field
+  if (!imageUrl && data.image) {
+    if (typeof data.image === "string" && !data.image.startsWith("data:")) {
+      imageUrl = data.image;
+    }
   }
 
   // Extract price
@@ -96,9 +106,11 @@ function transformProductToDocument(product) {
     originalPrice: originalPrice,
     currency: data.currency || "VND",
     specs: Array.isArray(data.specifications)
-      ? data.specifications
+      ? data.specifications.filter((s) => typeof s === "string")
       : data.specifications
       ? Object.values(data.specifications)
+          .filter((s) => typeof s === "string")
+          .flatMap((s) => (Array.isArray(s) ? s.filter((item) => typeof item === "string") : [s]))
       : [],
     specifications: data.specifications || {},
     suggest: suggest,

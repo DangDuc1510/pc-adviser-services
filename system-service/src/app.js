@@ -82,20 +82,6 @@ async function start() {
     // Connect to Redis
     await cacheService.connect();
 
-    // Connect to RabbitMQ (for health check only)
-    try {
-      const queue = require("./config/queue");
-      await queue.connect();
-      const queueConnected = await queue.testConnection();
-      if (!queueConnected) {
-        logger.warn("RabbitMQ connection failed. Health check may fail.");
-      }
-    } catch (error) {
-      logger.warn("RabbitMQ connection failed. Health check may fail.", {
-        error: error.message,
-      });
-    }
-
     // Start server
     app.listen(config.port, () => {
       logger.info(`System Service running on port ${config.port}`, {
@@ -125,16 +111,6 @@ const shutdown = async (signal) => {
         resolve();
       }
     });
-
-    // Disconnect from RabbitMQ
-    try {
-      const queue = require("./config/queue");
-      await queue.disconnect();
-    } catch (error) {
-      logger.warn("Error disconnecting from RabbitMQ", {
-        error: error.message,
-      });
-    }
 
     // Disconnect from Redis
     await cacheService.disconnect();

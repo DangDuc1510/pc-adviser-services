@@ -29,6 +29,12 @@ const productIndexMapping = {
       },
       category: {
         type: 'keyword',
+        fields: {
+          text: {
+            type: 'text',
+            analyzer: 'vietnamese_analyzer',
+          },
+        },
       },
       categoryId: {
         type: 'keyword',
