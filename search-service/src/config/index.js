@@ -67,13 +67,7 @@ const config = {
   },
 
   productService: {
-    url: (() => {
-      const url = value.PRODUCT_SERVICE_URL;
-      if (!url || url.trim() === "") return "http://localhost:3002";
-      return url.startsWith("http://") || url.startsWith("https://") 
-        ? url 
-        : `https://${url}`;
-    })(),
+    url: value.PRODUCT_SERVICE_URL,
   },
 
   logging: {
@@ -92,11 +86,7 @@ const config = {
   },
 
   cors: {
-    origin: value.CORS_ORIGIN ? value.CORS_ORIGIN.split(",") : [
-      "https://pc-adviser-web.vercel.app",
-      "https://pc-adviser-cms.vercel.app",
-      "http://localhost:4001",
-    ],
+    origin: value.CORS_ORIGIN.split(","),
   },
 };
 

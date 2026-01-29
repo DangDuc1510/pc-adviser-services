@@ -57,9 +57,8 @@ const config = {
   redis: {
     host: value.REDIS_HOST,
     port: value.REDIS_PORT,
-    password: value.REDIS_PASSWORD || undefined,
-    // Use REDIS_URL if available, otherwise construct from host/port (for Docker use REDIS_URL)
-    url: value.REDIS_URL || (value.REDIS_HOST && value.REDIS_HOST !== 'localhost' ? `redis://${value.REDIS_HOST}:${value.REDIS_PORT}` : null),
+    password: value.REDIS_PASSWORD,
+    url: value.REDIS_URL,
     ttl: value.REDIS_TTL,
   },
 
@@ -72,12 +71,7 @@ const config = {
   },
 
   cors: {
-    origin: value.CORS_ORIGIN ? value.CORS_ORIGIN.split(",") : [
-      "https://pc-adviser-web.vercel.app",
-      "https://pc-adviser-cms.vercel.app",
-      "http://localhost:4000",
-      "http://localhost:4001",
-    ],
+    origin: value.CORS_ORIGIN.split(","),
   },
 
   cache: {
@@ -95,7 +89,7 @@ const config = {
         pass: value.SMTP_PASS,
       },
     },
-    from: value.EMAIL_FROM || value.SMTP_USER,
+    from: value.EMAIL_FROM,
     fromName: value.EMAIL_FROM_NAME,
   },
 };

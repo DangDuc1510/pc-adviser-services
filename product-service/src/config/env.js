@@ -2,59 +2,43 @@ require("dotenv").config();
 
 const config = {
   // Server
-  PORT: process.env.PORT || 3002,
-  NODE_ENV: process.env.NODE_ENV || "development",
+  PORT: process.env.PORT,
+  NODE_ENV: process.env.NODE_ENV,
 
   // Database
-  MONGO_URI:
-    process.env.MONGO_URI || "mongodb://localhost:27017/product-service",
-  MONGODB_DB_NAME: process.env.MONGODB_DB_NAME || "test",
+  MONGO_URI: process.env.MONGO_URI,
+  MONGODB_DB_NAME: process.env.MONGODB_DB_NAME,
 
   // CORS
-  CORS_ORIGIN: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(",")
-    : [
-        "https://pc-adviser-web.vercel.app",
-        "https://pc-adviser-cms.vercel.app",
-        "http://localhost:4000",
-        "http://localhost:3000",
-        "http://127.0.0.1:4000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://localhost:3002",
-        "http://127.0.0.1:3002",
-        "http://localhost:4001",
-        "http://127.0.0.1:4001",
-      ],
+  CORS_ORIGIN: process.env.CORS_ORIGIN.split(","),
 
   // File upload
-  UPLOAD_PATH: process.env.UPLOAD_PATH || "./uploads",
-  MAX_FILE_SIZE: process.env.MAX_FILE_SIZE || "5mb",
+  UPLOAD_PATH: process.env.UPLOAD_PATH,
+  MAX_FILE_SIZE: process.env.MAX_FILE_SIZE,
 
   // Rate limiting
-  RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS || 100, // requests per window
+  RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
+  RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS,
 
   // Image processing
-  IMAGE_QUALITY: process.env.IMAGE_QUALITY || 85,
-  THUMBNAIL_SIZE: process.env.THUMBNAIL_SIZE || 300,
+  IMAGE_QUALITY: process.env.IMAGE_QUALITY,
+  THUMBNAIL_SIZE: process.env.THUMBNAIL_SIZE,
 
   // Search
-  SEARCH_LIMIT: process.env.SEARCH_LIMIT || 50,
+  SEARCH_LIMIT: process.env.SEARCH_LIMIT,
 
   // Cache
-  CACHE_TTL: process.env.CACHE_TTL || 300, // 5 minutes in seconds
+  CACHE_TTL: process.env.CACHE_TTL,
 
   // Cloudinary
   CLOUDINARY_URL: process.env.CLOUDINARY_URL,
 
   // Search Service
-  SEARCH_SERVICE_URL: process.env.SEARCH_SERVICE_URL || "http://localhost:8000",
-  SEARCH_SERVICE_ENABLED: process.env.SEARCH_SERVICE_ENABLED !== "false", // Default: enabled
+  SEARCH_SERVICE_URL: process.env.SEARCH_SERVICE_URL,
+  SEARCH_SERVICE_ENABLED: process.env.SEARCH_SERVICE_ENABLED !== "false",
 
   // JWT
-  JWT_SECRET: process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "your-secret-key",
+  JWT_SECRET: process.env.JWT_SECRET,
 };
 
 // Validate required environment variables

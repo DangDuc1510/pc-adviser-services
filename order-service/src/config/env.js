@@ -1,63 +1,26 @@
 require("dotenv").config();
 
 const config = {
-  NODE_ENV: process.env.NODE_ENV || "development",
-  PORT: process.env.PORT || 3003,
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
 
   // Database
-  MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/order_db",
-  MONGODB_DB_NAME: process.env.MONGODB_DB_NAME || "test",
+  MONGO_URI: process.env.MONGO_URI,
+  MONGODB_DB_NAME: process.env.MONGODB_DB_NAME,
   // JWT
-  JWT_SECRET: process.env.JWT_SECRET || "your_jwt_secret_here",
+  JWT_SECRET: process.env.JWT_SECRET,
 
-  // Product Service - Normalize URL (add https:// if missing protocol)
-  PRODUCT_SERVICE_URL: (() => {
-    const url = process.env.PRODUCT_SERVICE_URL || "http://localhost:3002";
-    if (!url || url.trim() === "") return "http://localhost:3002";
-    return url.startsWith("http://") || url.startsWith("https://") 
-      ? url 
-      : `https://${url}`;
-  })(),
-
-  // Identity Service - Normalize URL
-  IDENTITY_SERVICE_URL: (() => {
-    const url = process.env.IDENTITY_SERVICE_URL || "http://localhost:3001";
-    if (!url || url.trim() === "") return "http://localhost:3001";
-    return url.startsWith("http://") || url.startsWith("https://") 
-      ? url 
-      : `https://${url}`;
-  })(),
-
-  // Voucher Service - Normalize URL
-  VOUCHER_SERVICE_URL: (() => {
-    const url = process.env.VOUCHER_SERVICE_URL || "http://localhost:3008";
-    if (!url || url.trim() === "") return "http://localhost:3008";
-    return url.startsWith("http://") || url.startsWith("https://") 
-      ? url 
-      : `https://${url}`;
-  })(),
+  // External Services
+  PRODUCT_SERVICE_URL: process.env.PRODUCT_SERVICE_URL,
+  IDENTITY_SERVICE_URL: process.env.IDENTITY_SERVICE_URL,
+  VOUCHER_SERVICE_URL: process.env.VOUCHER_SERVICE_URL,
 
   // CORS
-  CORS_ORIGIN: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(",")
-    : [
-        "https://pc-adviser-web.vercel.app",
-        "https://pc-adviser-cms.vercel.app",
-        "http://localhost:4000",
-        "http://localhost:3000",
-        "http://127.0.0.1:4000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://localhost:3002",
-        "http://127.0.0.1:3002",
-        "http://localhost:4001",
-        "http://127.0.0.1:4001",
-      ],
+  CORS_ORIGIN: process.env.CORS_ORIGIN.split(","),
 
   // Rate Limiting
-  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000,
-  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
+  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS),
 };
 
 module.exports = config;

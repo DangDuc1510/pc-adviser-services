@@ -2,64 +2,32 @@ require("dotenv").config();
 
 const config = {
   // Server
-  PORT: process.env.PORT || 3001,
-  NODE_ENV: process.env.NODE_ENV || "development",
+  PORT: process.env.PORT,
+  NODE_ENV: process.env.NODE_ENV,
 
   // Database
-  MONGO_URI:
-    process.env.MONGO_URI || "mongodb://localhost:27017/identity-service",
-  MONGODB_DB_NAME: process.env.MONGODB_DB_NAME || "test",
+  MONGO_URI: process.env.MONGO_URI,
+  MONGODB_DB_NAME: process.env.MONGODB_DB_NAME,
 
   // Redis
-  REDIS_URL: process.env.REDIS_URL || null,
+  REDIS_URL: process.env.REDIS_URL,
 
   // JWT
-  JWT_SECRET: process.env.JWT_SECRET || "your-super-secret-jwt-key",
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "24h",
+  JWT_SECRET: process.env.JWT_SECRET,
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
 
   // CORS
-  CORS_ORIGIN: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(",")
-    : [
-        "https://pc-adviser-web.vercel.app",
-        "https://pc-adviser-cms.vercel.app",
-        "http://localhost:4000",
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:4000",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://localhost:4001",
-        "http://127.0.0.1:4001",
-      ],
+  CORS_ORIGIN: process.env.CORS_ORIGIN.split(","),
 
   // Rate limiting
-  RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS || 100, // requests per window
+  RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
+  RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS,
 
-  // External Services - Normalize URLs (add https:// if missing protocol)
-  ORDER_SERVICE_URL: (() => {
-    const url = process.env.ORDER_SERVICE_URL || "http://localhost:3003";
-    if (!url || url.trim() === "") return "http://localhost:3003";
-    return url.startsWith("http://") || url.startsWith("https://") 
-      ? url 
-      : `https://${url}`;
-  })(),
-  SYSTEM_SERVICE_URL: (() => {
-    const url = process.env.SYSTEM_SERVICE_URL || "http://localhost:3007";
-    if (!url || url.trim() === "") return "http://localhost:3007";
-    return url.startsWith("http://") || url.startsWith("https://") 
-      ? url 
-      : `https://${url}`;
-  })(),
-  VOUCHER_SERVICE_URL: (() => {
-    const url = process.env.VOUCHER_SERVICE_URL || "http://localhost:3008";
-    if (!url || url.trim() === "") return "http://localhost:3008";
-    return url.startsWith("http://") || url.startsWith("https://") 
-      ? url 
-      : `https://${url}`;
-  })(),
-  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:4001",
+  // External Services
+  ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL,
+  SYSTEM_SERVICE_URL: process.env.SYSTEM_SERVICE_URL,
+  VOUCHER_SERVICE_URL: process.env.VOUCHER_SERVICE_URL,
+  FRONTEND_URL: process.env.FRONTEND_URL,
 
   // Cloudinary
   CLOUDINARY_URL: process.env.CLOUDINARY_URL,

@@ -166,7 +166,7 @@ const handleReturn = async (req, res, next) => {
     }
 
     // Redirect to frontend with result
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:4001";
+    const frontendUrl = process.env.FRONTEND_URL;
     const redirectUrl = `${frontendUrl}/thanh-toan/ket-qua?orderId=${
       order._id
     }&status=${rspCode === "00" ? "success" : "failed"}&orderNumber=${

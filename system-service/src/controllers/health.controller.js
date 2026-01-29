@@ -9,7 +9,7 @@ const healthCheck = async (req, res) => {
       service: 'system-service',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
+      environment: process.env.NODE_ENV,
     };
 
     res.status(200).json(health);

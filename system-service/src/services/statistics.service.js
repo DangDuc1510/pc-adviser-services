@@ -4,12 +4,9 @@ const config = require("../config");
 
 class StatisticsService {
   constructor() {
-    this.orderServiceUrl =
-      process.env.ORDER_SERVICE_URL || "http://localhost:3003";
-    this.identityServiceUrl =
-      process.env.IDENTITY_SERVICE_URL || "http://localhost:3001";
-    this.productServiceUrl =
-      process.env.PRODUCT_SERVICE_URL || "http://localhost:3002";
+    this.orderServiceUrl = process.env.ORDER_SERVICE_URL;
+    this.identityServiceUrl = process.env.IDENTITY_SERVICE_URL;
+    this.productServiceUrl = process.env.PRODUCT_SERVICE_URL;
   }
 
   /**

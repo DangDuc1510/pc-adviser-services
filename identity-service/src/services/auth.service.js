@@ -118,7 +118,7 @@ const login = async (loginData) => {
       permissions: [...ROLE_PERMISSIONS[user.role], ...user.customPermissions],
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || JWT.DEFAULT_EXPIRES_IN }
+    { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 
   const userObject = user.toObject();
@@ -282,7 +282,7 @@ const refreshToken = async (oldToken) => {
         ],
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || JWT.DEFAULT_EXPIRES_IN }
+      { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
     return { accessToken: newAccessToken, token: newAccessToken };
