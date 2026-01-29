@@ -10,6 +10,12 @@ NC='\033[0m'
 
 echo -e "${YELLOW}Stopping Docker services...${NC}"
 
-docker-compose down
+# Check if --volumes flag is passed
+if [ "$1" == "--volumes" ] || [ "$1" == "-v" ]; then
+    echo -e "${YELLOW}Removing volumes as well...${NC}"
+    docker-compose down -v
+else
+    docker-compose down
+fi
 
 echo -e "${GREEN}✓ Services stopped!${NC}"

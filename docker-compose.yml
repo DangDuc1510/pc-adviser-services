@@ -210,6 +210,7 @@ services:
       ELASTICSEARCH_NODE: http://elasticsearch:9200
       ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-products}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_TTL: ${REDIS_TTL:-900}
       PRODUCT_SERVICE_URL: http://product-service:3002
       LOG_LEVEL: ${LOG_LEVEL:-info}
       CACHE_ENABLED: ${CACHE_ENABLED:-true}
@@ -306,8 +307,8 @@ services:
       PRODUCT_SERVICE_URL: http://product-service:3002
       CLOUDINARY_URL: ${CLOUDINARY_URL:-cloudinary://762612891411269:phYTZX1Ph9Q4syZWoe7VRYDqXf0@dxstpnc1n}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-60000}
-      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-200}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
     depends_on:
       order-service:
         condition: service_healthy

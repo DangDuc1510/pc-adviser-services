@@ -23,7 +23,9 @@ docker-compose up -d --build
 
 echo -e "${GREEN}✓ Services started!${NC}"
 echo ""
-echo "Useful commands:"
-echo "  docker-compose ps          - View running services"
-echo "  docker-compose logs -f      - View all logs"
-echo "  docker-compose down         - Stop all services"
+echo -e "${YELLOW}Useful commands:${NC}"
+echo "  ./docker-logs.sh            - View all logs"
+echo "  ./docker-logs.sh <service>  - View logs for specific service"
+echo "  ./docker-down.sh             - Stop all services"
+echo "  ./docker-down.sh --volumes   - Stop and remove volumes"
+echo "  docker-compose ps            - View running services"
