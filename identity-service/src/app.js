@@ -23,6 +23,10 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for behavior tracking endpoints
+    return req.path === "/behavior/track" || req.path === "/behavior/track/batch";
+  },
 });
 app.use(helmet());
 

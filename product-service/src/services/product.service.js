@@ -151,6 +151,161 @@ const getProductBySlug = async (slug) => {
   return product;
 };
 
+// Get lightweight products for internal use (no images, descriptions, etc.)
+// Used by smart-builder-service for calculations
+const getLightweightProducts = async (queryParams) => {
+  const expandedParams = { ...queryParams };
+  
+  // Handle categoryId expansion (same as getAllProducts)
+  if (queryParams.categoryId) {
+    try {
+      let categoryIds = [];
+      if (Array.isArray(queryParams.categoryId)) {
+        categoryIds = queryParams.categoryId;
+      } else if (
+        typeof queryParams.categoryId === "string" &&
+        queryParams.categoryId.includes(",")
+      ) {
+        categoryIds = queryParams.categoryId.split(",").map((id) => id.trim());
+      } else {
+        categoryIds = [queryParams.categoryId];
+      }
+
+      const allCategoryIds = new Set();
+      for (const categoryId of categoryIds) {
+        if (mongoose.Types.ObjectId.isValid(categoryId)) {
+          const descendantIds = await categoryRepository.getAllDescendantIds(
+            categoryId
+          );
+          descendantIds.forEach((id) => {
+            const idString = id.toString();
+            if (!allCategoryIds.has(idString)) {
+              allCategoryIds.add(idString);
+            }
+          });
+        }
+      }
+
+      if (allCategoryIds.size > 0) {
+        expandedParams.categoryId = Array.from(allCategoryIds);
+      }
+    } catch (error) {
+      console.error("Error expanding category IDs:", error.message);
+    }
+  }
+
+  const { page, limit } =
+    productValidator.validatePaginationParams(expandedParams);
+  const filter = productValidator.validateSearchParams(expandedParams);
+
+  // Build sort options
+  let sort = {};
+  const sortParam = queryParams.sort || queryParams.sortBy;
+
+  if (sortParam) {
+    switch (sortParam) {
+      case "newest":
+        sort = { createdAt: -1 };
+        break;
+      case "price_asc":
+        sort = { "pricing.originalPrice": 1 };
+        break;
+      case "price_desc":
+        sort = { "pricing.originalPrice": -1 };
+        break;
+      case "best_selling":
+        sort = { sales: -1, "pricing.originalPrice": 1 };
+        break;
+      case "rating":
+        sort = { "rating.average": -1, "rating.count": -1 };
+        break;
+      default:
+        const { sortOrder = "desc" } = queryParams;
+        sort[sortParam] = sortOrder === "desc" ? -1 : 1;
+        break;
+    }
+  } else {
+    sort = { createdAt: -1 };
+  }
+
+  // Lightweight fields only - exclude heavy fields like images, descriptions, videos
+  const lightweightSelect = 
+    "_id name sku slug " +
+    "brandId categoryId " +
+    "pricing.originalPrice pricing.salePrice pricing.isOnSale pricing.currency " +
+    "specifications " +
+    "colors " +
+    "status isActive " +
+    "inventory.stock inventory.isInStock inventory.reservedStock " +
+    "views sales " +
+    "rating.average rating.count " +
+    "shortDescription " +
+    "createdAt updatedAt";
+
+  const skip = (page - 1) * limit;
+
+  const [products, total] = await Promise.all([
+    productRepository.find(filter, {
+      select: lightweightSelect,
+      populate: [
+        { path: "brandId", select: "_id name slug" },
+        { path: "categoryId", select: "_id name slug" },
+      ],
+      sort,
+      skip,
+      limit,
+    }),
+    productRepository.count(filter),
+  ]);
+
+  return {
+    products,
+    pagination: {
+      page: page,
+      current: page,
+      limit: limit,
+      pageSize: limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
+    },
+  };
+};
+
+// Get lightweight product by ID (for internal use)
+const getLightweightProductById = async (productId) => {
+  if (!productId) {
+    throw new ValidationError("ID sản phẩm là bắt buộc");
+  }
+
+  const lightweightSelect = 
+    "_id name sku slug " +
+    "brandId categoryId " +
+    "pricing.originalPrice pricing.salePrice pricing.isOnSale pricing.currency " +
+    "specifications " +
+    "colors " +
+    "status isActive " +
+    "inventory.stock inventory.isInStock inventory.reservedStock " +
+    "views sales " +
+    "rating.average rating.count " +
+    "shortDescription " +
+    "createdAt updatedAt";
+
+  const product = await productRepository.findById(productId, {
+    select: lightweightSelect,
+    populate: [
+      { path: "brandId", select: "_id name slug" },
+      { path: "categoryId", select: "_id name slug" },
+    ],
+  });
+
+  if (!product) {
+    throw new ProductNotFoundError("Không tìm thấy sản phẩm");
+  }
+
+  return product;
+};
+
 // Get featured products
 const getFeaturedProducts = async (queryParams = {}) => {
   const { limit = 10, categoryId } = queryParams;
@@ -540,6 +695,8 @@ module.exports = {
   getFeaturedProducts,
   getOnSaleProducts,
   searchProducts,
+  getLightweightProducts,
+  getLightweightProductById,
   createProduct,
   updateProduct,
   updateProductStock,

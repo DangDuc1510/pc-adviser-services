@@ -125,7 +125,8 @@ class FavoriteService {
 
     for (const [productId, data] of productScores.entries()) {
       try {
-        const product = await productClient.getProduct(productId);
+        // Use lightweight product for calculations
+        const product = await productClient.getLightweightProduct(productId);
         if (
           !product ||
           product.status !==
@@ -266,6 +267,36 @@ class FavoriteService {
     favorites.sort((a, b) => b.score - a.score);
     const topFavorites = favorites.slice(0, limit);
 
+    // Fetch full product data only for final results
+    logger.debug("[FavoriteService] Fetching full product data for final results", {
+      count: topFavorites.length
+    });
+    const enrichStartTime = Date.now();
+    
+    const enrichedFavorites = await Promise.all(
+      topFavorites.map(async (fav) => {
+        try {
+          const fullProduct = await productClient.getProduct(fav.productId.toString());
+          return {
+            ...fav,
+            product: fullProduct || fav.product, // Use full product if available
+          };
+        } catch (error) {
+          logger.warn("[FavoriteService] Failed to fetch full product, using lightweight", {
+            productId: fav.productId,
+            error: error.message
+          });
+          return fav; // Keep lightweight product if full fetch fails
+        }
+      })
+    );
+    
+    const enrichDuration = Date.now() - enrichStartTime;
+    logger.info("[FavoriteService] Enriched favorites with full product data", {
+      count: enrichedFavorites.length,
+      duration: `${enrichDuration}ms`
+    });
+
     logger.debug("[FavoriteService] Sorted and limited favorites", {
       beforeLimit: favorites.length,
       afterLimit: topFavorites.length,
@@ -275,9 +306,9 @@ class FavoriteService {
       })),
     });
 
-    // Group by category
+    // Group by category (after enrichment)
     const byCategory = {};
-    for (const favorite of topFavorites) {
+    for (const favorite of enrichedFavorites) {
       const catId = favorite.category?.toString() || "other";
       if (!byCategory[catId]) {
         byCategory[catId] = [];
@@ -293,7 +324,7 @@ class FavoriteService {
     });
 
     const result = {
-      favorites: topFavorites,
+      favorites: enrichedFavorites,
       byCategory,
       timeWindow,
     };

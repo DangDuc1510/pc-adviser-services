@@ -62,6 +62,75 @@ async function deleteCache(key) {
 }
 
 /**
+ * Flush all cache or cache matching a pattern
+ * @param {String} pattern - Pattern to match (e.g., 'compatible:*', 'build_suggestions:*'). If null, flush all
+ * @returns {Promise<Object>} Result with deleted count
+ */
+async function flushCache(pattern = null) {
+  if (!redisClient || !redisClient.isReady) {
+    return { success: false, deletedCount: 0, message: 'Redis not available' };
+  }
+  
+  try {
+    let deletedCount = 0;
+    
+    if (pattern) {
+      // Use SCAN to find keys matching pattern (non-blocking)
+      // Redis client v4+ uses different API
+      const keys = [];
+      let cursor = 0;
+      
+      do {
+        const result = await redisClient.scan(cursor, {
+          MATCH: pattern,
+          COUNT: 100
+        });
+        // Redis client v4+ returns [cursor, keys] array
+        if (Array.isArray(result)) {
+          cursor = parseInt(result[0]);
+          keys.push(...result[1]);
+        } else if (result && typeof result === 'object') {
+          // Fallback: try to get cursor and keys from result object
+          cursor = result.cursor || result[0] || 0;
+          const resultKeys = result.keys || result[1] || [];
+          keys.push(...resultKeys);
+        } else {
+          break;
+        }
+      } while (cursor !== 0);
+      
+      // Delete keys in batches to avoid blocking
+      if (keys.length > 0) {
+        // Delete in batches of 100
+        const batchSize = 100;
+        for (let i = 0; i < keys.length; i += batchSize) {
+          const batch = keys.slice(i, i + batchSize);
+          const deleted = await redisClient.del(batch);
+          deletedCount += deleted;
+        }
+      }
+    } else {
+      // Flush all cache
+      await redisClient.flushAll();
+      deletedCount = -1; // -1 indicates all keys were deleted
+    }
+    
+    return {
+      success: true,
+      deletedCount: deletedCount,
+      pattern: pattern || 'all'
+    };
+  } catch (error) {
+    console.error('Redis flush error:', error);
+    return {
+      success: false,
+      deletedCount: 0,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Generate cache key for user preferences
  * @param {String} customerId - Customer ID
  * @returns {String} Cache key
@@ -95,6 +164,7 @@ module.exports = {
   getCache,
   setCache,
   deleteCache,
+  flushCache,
   getUserPreferenceKey,
   getRecommendationKey,
   getSimilarityMatrixKey

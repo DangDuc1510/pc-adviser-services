@@ -481,3 +481,196 @@ function extractSuggestKeywords(keyword, products) {
 
   return Array.from(suggestions).slice(0, 5);
 }
+
+/**
+ * Filter products by compatibility requirements
+ * GET /search/filter?componentType=motherboard&socket=AM4&ramType=DDR4&minWattage=500&minPrice=1000000&maxPrice=5000000
+ */
+exports.filterByCompatibility = async (req, res, next) => {
+  try {
+    const {
+      componentType,
+      socket,
+      ramType,
+      formFactor,
+      minWattage,
+      minPrice,
+      maxPrice,
+      brand,
+      category,
+      size = 30,
+      status = 'active',
+    } = req.query;
+
+    logger.info('[SearchController] Filtering by compatibility', {
+      componentType,
+      socket,
+      ramType,
+      formFactor,
+      minWattage,
+      minPrice,
+      maxPrice,
+      size,
+    });
+
+    // Build Elasticsearch query
+    const query = {
+      size: Math.min(parseInt(size) || 30, 30),
+      query: {
+        bool: {
+          must: [],
+          filter: [],
+          should: [],
+        },
+      },
+      _source: [
+        'id',
+        'name',
+        'slug',
+        'price',
+        'originalPrice',
+        'brand',
+        'brandId',
+        'category',
+        'categoryId',
+        'specifications',
+        'inventory',
+        'popularity',
+        'status',
+      ],
+    };
+
+    // Status filter
+    if (status) {
+      query.query.bool.filter.push({
+        term: { status: status },
+      });
+    }
+
+    // In-stock filter
+    query.query.bool.filter.push({
+      term: {
+        'inventory.inStock': true,
+      },
+    });
+
+    // Specifications filters
+    if (socket) {
+      query.query.bool.filter.push({
+        term: { 'specifications.socket': socket },
+      });
+    }
+
+    if (ramType) {
+      query.query.bool.filter.push({
+        term: { 'specifications.ramTypes': ramType },
+      });
+    }
+
+    if (formFactor) {
+      query.query.bool.filter.push({
+        term: { 'specifications.supportedFormFactors': formFactor },
+      });
+    }
+
+    if (minWattage) {
+      query.query.bool.filter.push({
+        range: {
+          'specifications.wattage': {
+            gte: parseInt(minWattage),
+          },
+        },
+      });
+    }
+
+    // Price range filter
+    if (minPrice || maxPrice) {
+      const priceRange = {};
+      if (minPrice) priceRange.gte = parseFloat(minPrice);
+      if (maxPrice) priceRange.lte = parseFloat(maxPrice);
+
+      query.query.bool.filter.push({
+        range: {
+          price: priceRange,
+        },
+      });
+    }
+
+    // Brand filter
+    if (brand) {
+      const brandIds = brand.split(',').map((b) => b.trim());
+      if (brandIds.length === 1) {
+        query.query.bool.filter.push({
+          term: { brandId: brandIds[0] },
+        });
+      } else {
+        query.query.bool.filter.push({
+          terms: { brandId: brandIds },
+        });
+      }
+    }
+
+    // Category filter
+    if (category) {
+      const categoryIds = category.split(',').map((c) => c.trim());
+      if (categoryIds.length === 1) {
+        query.query.bool.filter.push({
+          term: { categoryId: categoryIds[0] },
+        });
+      } else {
+        query.query.bool.filter.push({
+          terms: { categoryId: categoryIds },
+        });
+      }
+    }
+
+    // Boost for popularity
+    query.query.bool.should.push({
+      range: {
+        popularity: {
+          gt: 0,
+          boost: 1.5,
+        },
+      },
+    });
+
+    // Execute search
+    const result = await elasticsearchService.search(query);
+
+    // Transform results
+    const products = result.hits.hits.map((hit) => ({
+      id: hit._source.id || hit._id,
+      _id: hit._source.id || hit._id,
+      name: hit._source.name,
+      slug: hit._source.slug,
+      price: hit._source.price,
+      originalPrice: hit._source.originalPrice || hit._source.price,
+      brand: hit._source.brand,
+      brandId: hit._source.brandId,
+      category: hit._source.category,
+      categoryId: hit._source.categoryId,
+      specifications: hit._source.specifications || {},
+      inventory: hit._source.inventory || {},
+      popularity: hit._source.popularity || 0,
+      status: hit._source.status,
+      _score: hit._score,
+    }));
+
+    logger.info('[SearchController] Filter completed', {
+      productsCount: products.length,
+      totalHits: result.hits.total?.value || result.hits.total,
+    });
+
+    res.json({
+      success: true,
+      products,
+      total: result.hits.total?.value || result.hits.total,
+    });
+  } catch (error) {
+    logger.error('[SearchController] Filter error', {
+      error: error.message,
+      stack: error.stack,
+    });
+    next(error);
+  }
+};

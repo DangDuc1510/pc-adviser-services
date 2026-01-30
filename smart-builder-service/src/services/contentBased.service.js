@@ -42,9 +42,10 @@ class ContentBasedService {
       limit: recommendationConfig.DEFAULT_LIMITS.PRODUCT_FETCH_LIMIT,
     };
 
-    logger.debug("[ContentBasedService] Fetching products", { filters });
+    logger.debug("[ContentBasedService] Fetching lightweight products", { filters });
     const productsStartTime = Date.now();
-    const productsResponse = await productClient.getProducts(filters);
+    // Use lightweight API for faster fetching
+    const productsResponse = await productClient.getLightweightProducts(filters);
     const productsDuration = Date.now() - productsStartTime;
     let products = Array.isArray(productsResponse)
       ? productsResponse

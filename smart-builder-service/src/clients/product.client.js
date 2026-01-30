@@ -143,6 +143,75 @@ class ProductClient {
     }
   }
 
+  /**
+   * Get lightweight products (internal API)
+   * Returns products without heavy fields (images, fullDescription, videos, etc.)
+   * Used for calculations in recommendation system
+   */
+  async getLightweightProducts(filters = {}) {
+    try {
+      logger.debug(`[ProductClient] Fetching lightweight products`, { filters });
+      const response = await this.client.get("/products/internal/lightweight", {
+        params: filters,
+      });
+      
+      // Handle response format
+      if (response.data) {
+        if (response.data.products) {
+          logger.debug(`[ProductClient] Got ${response.data.products.length} lightweight products`);
+          return response.data.products;
+        }
+        if (Array.isArray(response.data)) {
+          logger.debug(`[ProductClient] Got ${response.data.length} lightweight products`);
+          return response.data;
+        }
+        if (response.data.data) {
+          return response.data.data;
+        }
+      }
+      return response.data || [];
+    } catch (error) {
+      logger.error(`ProductClient.getLightweightProducts error:`, {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+      // Fallback to regular getProducts if lightweight API fails
+      logger.warn(`[ProductClient] Falling back to regular getProducts`);
+      return this.getProducts(filters);
+    }
+  }
+
+  /**
+   * Get lightweight product by ID (internal API)
+   */
+  async getLightweightProduct(productId) {
+    try {
+      logger.debug(`[ProductClient] Fetching lightweight product ${productId}`);
+      const response = await this.client.get(`/products/internal/lightweight/${productId}`);
+      
+      if (response.data) {
+        logger.debug(`[ProductClient] Got lightweight product ${productId}`);
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      logger.error(`ProductClient.getLightweightProduct error for ${productId}:`, {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+      
+      if (error.response?.status === 404) {
+        return null;
+      }
+      
+      // Fallback to regular getProduct if lightweight API fails
+      logger.warn(`[ProductClient] Falling back to regular getProduct`);
+      return this.getProduct(productId);
+    }
+  }
+
   async getCategory(categoryId) {
     try {
       const response = await this.client.get(`/categories/${categoryId}`);

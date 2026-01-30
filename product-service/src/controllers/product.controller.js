@@ -32,6 +32,27 @@ const getBySlug = async (req, res, next) => {
   }
 };
 
+// Get lightweight products (internal API for smart-builder-service)
+// Returns products without images, fullDescription, videos, etc.
+const getLightweight = async (req, res, next) => {
+  try {
+    const result = await productService.getLightweightProducts(req.query);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get lightweight product by ID (internal API)
+const getLightweightById = async (req, res, next) => {
+  try {
+    const product = await productService.getLightweightProductById(req.params.id);
+    res.json(product);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Get featured products
 const getFeatured = async (req, res, next) => {
   try {
@@ -569,6 +590,8 @@ module.exports = {
   getFeatured,
   getOnSale,
   search,
+  getLightweight,
+  getLightweightById,
   create,
   update,
   updateStock,

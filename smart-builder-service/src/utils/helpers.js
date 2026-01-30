@@ -90,6 +90,42 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Create hash from object for cache keys
+ * @param {Object} obj - Object to hash
+ * @returns {String} Hash string
+ */
+function hashObject(obj) {
+  const str = JSON.stringify(obj, Object.keys(obj).sort());
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
+/**
+ * Generate cache key for compatibility recommendations
+ * @param {String} componentType - Component type
+ * @param {Object} requirements - Compatibility requirements
+ * @returns {String} Cache key
+ */
+function getCompatibilityCacheKey(componentType, requirements) {
+  const reqHash = hashObject(requirements);
+  return `compatible:${componentType}:${reqHash}`;
+}
+
+/**
+ * Generate cache key for product pool by component type
+ * @param {String} componentType - Component type
+ * @returns {String} Cache key
+ */
+function getProductPoolCacheKey(componentType) {
+  return `product_pool:${componentType}`;
+}
+
 module.exports = {
   safeJsonParse,
   normalizeScore,
@@ -97,6 +133,9 @@ module.exports = {
   getPriceRangeCategory,
   extractProductId,
   chunkArray,
-  sleep
+  sleep,
+  hashObject,
+  getCompatibilityCacheKey,
+  getProductPoolCacheKey
 };
 

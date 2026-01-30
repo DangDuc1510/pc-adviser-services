@@ -23,6 +23,12 @@ module.exports = {
   ORDER_SERVICE: {
     BASE_URL: config.ORDER_SERVICE_URL,
     GET_USER_ORDERS: (userId) => `${config.ORDER_SERVICE_URL}/api/v1/orders/user/${userId}`,
-  }
+  },
+
+  SEARCH_SERVICE: {
+    BASE_URL: config.SEARCH_SERVICE_URL || 'http://localhost:3006',
+    SEARCH: `${config.SEARCH_SERVICE_URL || 'http://localhost:3006'}/search`,
+    FILTER: `${config.SEARCH_SERVICE_URL || 'http://localhost:3006'}/search/filter`,
+  },
 };
 

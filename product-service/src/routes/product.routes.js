@@ -16,6 +16,10 @@ router.get("/health", (req, res) => {
   });
 });
 
+// Internal API for smart-builder-service (lightweight products)
+router.get("/internal/lightweight", productController.getLightweight);
+router.get("/internal/lightweight/:id", productController.getLightweightById);
+
 // Get all products with pagination, search, and filters
 router.get("/", productController.getAll);
 

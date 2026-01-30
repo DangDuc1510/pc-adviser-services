@@ -40,7 +40,8 @@ class SimilarityService {
     logger.debug('[SimilarityService] Fetching reference product', { productId });
     const productFetchStart = Date.now();
     try {
-      referenceProduct = await productClient.getProduct(productId);
+      // Use lightweight for initial fetch, will fetch full later if needed
+      referenceProduct = await productClient.getLightweightProduct(productId);
 
       if (!referenceProduct) {
         logger.warn(`[SimilarityService] Product ${productId} not found`);
@@ -91,9 +92,10 @@ class SimilarityService {
       filters.categoryId = targetCategory;
     }
 
-    logger.debug('[SimilarityService] Fetching products from Product Service', { filters });
+    logger.debug('[SimilarityService] Fetching lightweight products from Product Service', { filters });
     const productsFetchStart = Date.now();
-    const productsResponse = await productClient.getProducts(filters);
+    // Use lightweight API for faster fetching
+    const productsResponse = await productClient.getLightweightProducts(filters);
     const productsFetchDuration = Date.now() - productsFetchStart;
     let products = Array.isArray(productsResponse)
       ? productsResponse
@@ -180,13 +182,56 @@ class SimilarityService {
       }))
     });
 
+    // Fetch full product data for reference product and similar products
+    logger.debug('[SimilarityService] Fetching full product data for final results', {
+      referenceProduct: true,
+      similarCount: topSimilar.length
+    });
+    const enrichStartTime = Date.now();
+    
+    // Fetch full reference product
+    let fullReferenceProduct = referenceProduct;
+    try {
+      const fetched = await productClient.getProduct(productId);
+      if (fetched) fullReferenceProduct = fetched;
+    } catch (error) {
+      logger.warn('[SimilarityService] Failed to fetch full reference product, using lightweight', {
+        error: error.message
+      });
+    }
+    
+    // Fetch full products for similar products
+    const enrichedSimilarProducts = await Promise.all(
+      topSimilar.map(async (sim) => {
+        try {
+          const fullProduct = await productClient.getProduct(sim.productId.toString());
+          return {
+            ...sim,
+            product: fullProduct || sim.product, // Use full product if available
+          };
+        } catch (error) {
+          logger.warn('[SimilarityService] Failed to fetch full product, using lightweight', {
+            productId: sim.productId,
+            error: error.message
+          });
+          return sim; // Keep lightweight product if full fetch fails
+        }
+      })
+    );
+    
+    const enrichDuration = Date.now() - enrichStartTime;
+    logger.info('[SimilarityService] Enriched results with full product data', {
+      duration: `${enrichDuration}ms`
+    });
+
     const result = {
       referenceProduct: {
-        id: referenceProduct._id,
-        name: referenceProduct.name,
-        category: referenceProduct.categoryId,
+        id: fullReferenceProduct._id,
+        name: fullReferenceProduct.name,
+        category: fullReferenceProduct.categoryId,
+        product: fullReferenceProduct, // Include full product
       },
-      similarProducts: topSimilar,
+      similarProducts: enrichedSimilarProducts,
     };
 
     // Cache result
@@ -195,7 +240,7 @@ class SimilarityService {
 
     logger.info('[SimilarityService] Returning similar products', {
       referenceProductId: productId,
-      similarProductsCount: topSimilar.length
+      similarProductsCount: enrichedSimilarProducts.length
     });
 
     return result;

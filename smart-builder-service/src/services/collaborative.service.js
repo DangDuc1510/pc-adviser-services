@@ -122,7 +122,8 @@ class CollaborativeService {
     )) {
       // Limit to avoid too many calls
       try {
-        const product = await productClient.getProduct(productId);
+        // Use lightweight product for calculations
+        const product = await productClient.getLightweightProduct(productId);
         if (product) {
           userProductDetails.push(product);
         }
@@ -163,9 +164,10 @@ class CollaborativeService {
       limit: recommendationConfig.DEFAULT_LIMITS.PRODUCT_FETCH_LIMIT,
     };
 
-    logger.debug("[CollaborativeService] Fetching all products", { filters });
+    logger.debug("[CollaborativeService] Fetching lightweight products", { filters });
     const allProductsStart = Date.now();
-    const productsResponse = await productClient.getProducts(filters);
+    // Use lightweight API for faster fetching
+    const productsResponse = await productClient.getLightweightProducts(filters);
     const allProductsDuration = Date.now() - allProductsStart;
     const allProducts = Array.isArray(productsResponse)
       ? productsResponse
@@ -244,7 +246,37 @@ class CollaborativeService {
       })),
     });
 
-    return sorted;
+    // Fetch full product data only for final results
+    logger.debug("[CollaborativeService] Fetching full product data for final results", {
+      count: sorted.length
+    });
+    const enrichStartTime = Date.now();
+    
+    const enrichedRecommendations = await Promise.all(
+      sorted.map(async (rec) => {
+        try {
+          const fullProduct = await productClient.getProduct(rec.productId.toString());
+          return {
+            ...rec,
+            product: fullProduct || rec.product, // Use full product if available
+          };
+        } catch (error) {
+          logger.warn("[CollaborativeService] Failed to fetch full product, using lightweight", {
+            productId: rec.productId,
+            error: error.message
+          });
+          return rec; // Keep lightweight product if full fetch fails
+        }
+      })
+    );
+    
+    const enrichDuration = Date.now() - enrichStartTime;
+    logger.info("[CollaborativeService] Enriched recommendations with full product data", {
+      count: enrichedRecommendations.length,
+      duration: `${enrichDuration}ms`
+    });
+
+    return enrichedRecommendations;
   }
 
   extractPreferencesFromProducts(products) {

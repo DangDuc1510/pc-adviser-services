@@ -20,6 +20,7 @@ const config = {
   IDENTITY_SERVICE_URL: process.env.IDENTITY_SERVICE_URL,
   ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL,
   VOUCHER_SERVICE_URL: process.env.VOUCHER_SERVICE_URL,
+  SEARCH_SERVICE_URL: process.env.SEARCH_SERVICE_URL || 'http://localhost:3006',
 
   // JWT
   JWT_SECRET: process.env.JWT_SECRET,
@@ -40,6 +41,9 @@ const config = {
   LOG_LEVEL: process.env.LOG_LEVEL,
   LOG_FILE_PATH: process.env.LOG_FILE_PATH,
   LOG_ERROR_FILE_PATH: process.env.LOG_ERROR_FILE_PATH,
+
+  // Search Service (for optimization - tận dụng search-service thay vì connect trực tiếp Elasticsearch)
+  SEARCH_SERVICE_URL: process.env.SEARCH_SERVICE_URL || 'http://localhost:3006',
 };
 
 // Validate required environment variables

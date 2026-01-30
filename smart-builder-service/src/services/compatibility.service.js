@@ -1,19 +1,27 @@
 const productClient = require('../clients/product.client');
+const retrievalService = require('./retrieval.service');
 const { calculateCompatibilityScore, calculatePriceScore, calculateBrandScore, calculateFinalScore } = require('../utils/scoring');
 const { productMatchesComponentType, getCategoryNamesForComponent } = require('../utils/componentMapping');
 const recommendationConfig = require('../utils/recommendation-config');
+const optimizationConfig = require('../utils/optimization-config');
+const { getCache, setCache } = require('../utils/cache');
+const { getCompatibilityCacheKey, getProductPoolCacheKey, chunkArray } = require('../utils/helpers');
 const logger = require('../utils/logger');
+const config = require('../config/env');
 
 /**
  * Get compatible component recommendations
  */
 class CompatibilityService {
   async getCompatibleRecommendations(options) {
-    const { componentType, currentComponents = [], buildId } = options;
+    const { componentType, currentComponents = [], buildId, limit = 10 } = options;
+    const startTime = Date.now();
+    
     logger.info('[CompatibilityService] Starting compatible recommendations', {
       componentType,
       currentComponentsCount: currentComponents.length,
-      buildId
+      buildId,
+      limit
     });
 
     // Extract compatibility requirements from current components
@@ -23,23 +31,172 @@ class CompatibilityService {
       componentType
     });
 
-    // Get products of the requested component type
+    // Check cache for recommendations
+    const cacheKey = getCompatibilityCacheKey(componentType, requirements);
+    logger.debug('[CompatibilityService] Checking cache', { cacheKey });
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      logger.info('[CompatibilityService] Cache hit, returning cached results', {
+        cacheKey,
+        count: cached.recommendations?.length || 0,
+        duration: `${Date.now() - startTime}ms`
+      });
+      return {
+        ...cached,
+        fromCache: true
+      };
+    }
+    logger.debug('[CompatibilityService] Cache miss, proceeding with calculation');
+
+    // TWO-STAGE ARCHITECTURE: Stage 1 - Retrieval
+    let products = [];
+    const useTwoStage = optimizationConfig.FEATURES.TWO_STAGE_ARCHITECTURE && 
+                        optimizationConfig.FEATURES.ELASTICSEARCH_RETRIEVAL;
+
+    if (useTwoStage) {
+      logger.info('[CompatibilityService] Using two-stage architecture - Stage 1: Retrieval');
+      const retrievalStartTime = Date.now();
+      
+      // Retrieve candidates from Elasticsearch
+      const candidates = await retrievalService.retrieveCandidates({
+        componentType,
+        requirements,
+        limit: optimizationConfig.TWO_STAGE.RETRIEVAL.CANDIDATES_LIMIT,
+      });
+
+      const retrievalDuration = Date.now() - retrievalStartTime;
+      logger.info('[CompatibilityService] Retrieval stage completed', {
+        candidatesCount: candidates.length,
+        duration: `${retrievalDuration}ms`,
+      });
+
+      // Transform candidates to product format
+      products = retrievalService.transformCandidates(candidates, componentType);
+
+      // Fallback to product service if not enough candidates
+      if (products.length < optimizationConfig.ELASTICSEARCH.MIN_CANDIDATES) {
+        logger.warn('[CompatibilityService] Not enough candidates from Elasticsearch, falling back to product service', {
+          candidatesCount: products.length,
+          minRequired: optimizationConfig.ELASTICSEARCH.MIN_CANDIDATES,
+        });
+        products = await this.getProductsForComponentType(componentType);
+      }
+    } else {
+      // OLD APPROACH: Fetch all products
+      logger.info('[CompatibilityService] Using legacy approach - fetching all products');
+      products = await this.getProductsForComponentType(componentType);
+    }
+    
+    if (products.length === 0) {
+      logger.warn('[CompatibilityService] No products found for component type', { componentType });
+      return {
+        componentType,
+        recommendations: [],
+        filters: requirements,
+        fromCache: false
+      };
+    }
+
+    // TWO-STAGE ARCHITECTURE: Stage 2 - Ranking
+    logger.info('[CompatibilityService] Stage 2: Ranking candidates', {
+      productsCount: products.length,
+    });
+
+    // Process products in batches for better performance
+    const recommendations = await this.processProductsBatch(
+      products,
+      requirements,
+      componentType,
+      limit
+    );
+
+    // Get top recommendations (still lightweight)
+    const topRecommendations = recommendations.slice(0, limit);
+    
+    // Fetch full product data only for final results
+    logger.debug('[CompatibilityService] Fetching full product data for final results', {
+      count: topRecommendations.length
+    });
+    const enrichStartTime = Date.now();
+    
+    const enrichedRecommendations = await Promise.all(
+      topRecommendations.map(async (rec) => {
+        try {
+          const fullProduct = await productClient.getProduct(rec.productId.toString());
+          return {
+            ...rec,
+            product: fullProduct || rec.product, // Use full product if available, fallback to lightweight
+          };
+        } catch (error) {
+          logger.warn('[CompatibilityService] Failed to fetch full product, using lightweight', {
+            productId: rec.productId,
+            error: error.message
+          });
+          return rec; // Keep lightweight product if full fetch fails
+        }
+      })
+    );
+    
+    const enrichDuration = Date.now() - enrichStartTime;
+    logger.info('[CompatibilityService] Enriched recommendations with full product data', {
+      count: enrichedRecommendations.length,
+      duration: `${enrichDuration}ms`
+    });
+
+    const result = {
+      componentType,
+      recommendations: enrichedRecommendations,
+      filters: requirements,
+      fromCache: false
+    };
+
+    // Cache the result (TTL from config, default 15 minutes)
+    const cacheTTL = config.CACHE_TTL_RECOMMENDATIONS || 900;
+    await setCache(cacheKey, result, cacheTTL);
+    
+    const duration = Date.now() - startTime;
+    logger.info('[CompatibilityService] Recommendations completed', {
+      componentType,
+      topCount: result.recommendations.length,
+      duration: `${duration}ms`,
+      cached: true
+    });
+    
+    return result;
+  }
+
+  /**
+   * Get products for component type (with caching)
+   * @param {String} componentType - Component type
+   * @returns {Promise<Array>} Products array
+   */
+  async getProductsForComponentType(componentType) {
+    const poolCacheKey = getProductPoolCacheKey(componentType);
+    
+    // Check product pool cache (longer TTL - 1 hour)
+    const cachedPool = await getCache(poolCacheKey);
+    if (cachedPool && Array.isArray(cachedPool)) {
+      logger.debug('[CompatibilityService] Product pool cache hit', {
+        componentType,
+        count: cachedPool.length
+      });
+      return cachedPool;
+    }
+
+    logger.debug('[CompatibilityService] Fetching lightweight products from Product Service', { componentType });
+    const fetchStartTime = Date.now();
+    
     const filters = {
       status: recommendationConfig.PRODUCT_FILTERING.REQUIRED_STATUS,
       isActive: recommendationConfig.PRODUCT_FILTERING.REQUIRED_ACTIVE,
-      limit: recommendationConfig.COMPATIBILITY.PRODUCT_FETCH_LIMIT, // Get more to filter properly
+      limit: recommendationConfig.COMPATIBILITY.PRODUCT_FETCH_LIMIT,
     };
 
-    logger.debug('[CompatibilityService] Fetching products from Product Service', { filters });
-    const fetchStartTime = Date.now();
-    const productsResponse = await productClient.getProducts(filters);
+    // Use lightweight API for faster fetching (no images, descriptions, etc.)
+    const productsResponse = await productClient.getLightweightProducts(filters);
     const fetchDuration = Date.now() - fetchStartTime;
     let products = Array.isArray(productsResponse) ? productsResponse : (productsResponse.products || []);
-    logger.info('[CompatibilityService] Fetched products', {
-      count: products.length,
-      duration: `${fetchDuration}ms`
-    });
-
+    
     // Filter by component type
     if (componentType) {
       const beforeFilter = products.length;
@@ -53,90 +210,125 @@ class CompatibilityService {
       });
     }
 
-    // Filter and score products
-    const recommendations = [];
-    let incompatibleCount = 0;
-    let scoredCount = 0;
-    
-    logger.debug('[CompatibilityService] Starting to score products', {
-      totalProducts: products.length
+    logger.info('[CompatibilityService] Fetched products', {
+      count: products.length,
+      duration: `${fetchDuration}ms`,
+      componentType
     });
 
-    for (const product of products) {
-      const compatibility = this.checkCompatibility(product, requirements, componentType);
-      const compatibilityScore = calculateCompatibilityScore(compatibility);
-      
-      if (compatibilityScore === 0) {
-        incompatibleCount++;
-        logger.debug('[CompatibilityService] Product incompatible, skipping', {
-          productId: product._id?.toString(),
-          compatibility
-        });
-        continue; // Skip incompatible products
-      }
-      
-      const scores = {
-        compatibility: compatibilityScore,
-        price: calculatePriceScore(
-          product.pricing?.salePrice || product.pricing?.originalPrice || 0,
-          requirements.budgetMin,
-          requirements.budgetMax
-        ),
-        brand: calculateBrandScore(product.brandId?.toString(), requirements.brandPreferences),
-        popularity: (product.views || 0) / recommendationConfig.POPULARITY.COMPATIBILITY_NORMALIZATION, // Normalize popularity
-      };
-      
-      const weights = recommendationConfig.COMPATIBILITY.SCORING_WEIGHTS;
-      const finalScore = calculateFinalScore(scores, {
-        compatibility: weights.compatibility,
-        price: weights.price,
-        brand: weights.brand,
-        popularity: weights.popularity,
-      });
-      
-      scoredCount++;
-      logger.debug('[CompatibilityService] Product scored', {
-        productId: product._id?.toString(),
-        productName: product.name,
-        scores,
-        finalScore,
-        compatibility
-      });
-      
-      recommendations.push({
-        productId: product._id,
-        product,
-        score: finalScore,
-        compatibility,
-        reasons: this.generateReasons(product, compatibility, requirements),
-        scores
-      });
+    // Cache product pool (1 hour TTL)
+    if (products.length > 0) {
+      await setCache(poolCacheKey, products, 3600);
     }
 
-    logger.info('[CompatibilityService] Scoring completed', {
+    return products;
+  }
+
+  /**
+   * Process products in batches for better performance
+   * @param {Array} products - Products to process
+   * @param {Object} requirements - Compatibility requirements
+   * @param {String} componentType - Component type
+   * @param {Number} targetLimit - Target number of recommendations
+   * @returns {Promise<Array>} Sorted recommendations
+   */
+  async processProductsBatch(products, requirements, componentType, targetLimit) {
+    const BATCH_SIZE = 50; // Process 50 products at a time
+    const EARLY_EXIT_THRESHOLD = targetLimit * 3; // Stop when we have 3x target limit
+    
+    const recommendations = [];
+    let incompatibleCount = 0;
+    const batches = chunkArray(products, BATCH_SIZE);
+    
+    logger.debug('[CompatibilityService] Processing products in batches', {
       totalProducts: products.length,
-      incompatibleCount,
-      scoredCount,
-      recommendationsCount: recommendations.length
+      batchCount: batches.length,
+      batchSize: BATCH_SIZE,
+      targetLimit
     });
 
-    // Sort by score and return top 10
+    for (const batch of batches) {
+      // Process batch in parallel
+      const batchPromises = batch.map(product => 
+        this.scoreProduct(product, requirements, componentType)
+      );
+      
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Filter out incompatible products and add to recommendations
+      for (const result of batchResults) {
+        if (result === null) {
+          incompatibleCount++;
+          continue;
+        }
+        recommendations.push(result);
+      }
+
+      // Early exit optimization: if we have enough good recommendations, stop processing
+      if (recommendations.length >= EARLY_EXIT_THRESHOLD) {
+        logger.debug('[CompatibilityService] Early exit triggered', {
+          recommendationsCount: recommendations.length,
+          threshold: EARLY_EXIT_THRESHOLD,
+          processedProducts: batches.indexOf(batch) * BATCH_SIZE + batch.length
+        });
+        break;
+      }
+    }
+
+    // Sort by score (descending)
     recommendations.sort((a, b) => b.score - a.score);
-    const topRecommendations = recommendations.slice(0, 10);
     
-    logger.info('[CompatibilityService] Returning top recommendations', {
-      componentType,
-      topCount: topRecommendations.length,
-      topScores: topRecommendations.map(r => ({
-        productId: r.productId?.toString(),
-        score: r.score
-      }))
+    logger.info('[CompatibilityService] Batch processing completed', {
+      totalProducts: products.length,
+      incompatibleCount,
+      recommendationsCount: recommendations.length,
+      topScore: recommendations[0]?.score || 0
+    });
+
+    return recommendations;
+  }
+
+  /**
+   * Score a single product
+   * @param {Object} product - Product to score
+   * @param {Object} requirements - Compatibility requirements
+   * @param {String} componentType - Component type
+   * @returns {Object|null} Scored recommendation or null if incompatible
+   */
+  async scoreProduct(product, requirements, componentType) {
+    const compatibility = this.checkCompatibility(product, requirements, componentType);
+    const compatibilityScore = calculateCompatibilityScore(compatibility);
+    
+    if (compatibilityScore === 0) {
+      return null; // Incompatible
+    }
+    
+    const scores = {
+      compatibility: compatibilityScore,
+      price: calculatePriceScore(
+        product.pricing?.salePrice || product.pricing?.originalPrice || 0,
+        requirements.budgetMin,
+        requirements.budgetMax
+      ),
+      brand: calculateBrandScore(product.brandId?.toString(), requirements.brandPreferences),
+      popularity: (product.views || 0) / recommendationConfig.POPULARITY.COMPATIBILITY_NORMALIZATION,
+    };
+    
+    const weights = recommendationConfig.COMPATIBILITY.SCORING_WEIGHTS;
+    const finalScore = calculateFinalScore(scores, {
+      compatibility: weights.compatibility,
+      price: weights.price,
+      brand: weights.brand,
+      popularity: weights.popularity,
     });
     
     return {
-      componentType,
-      recommendations: topRecommendations,
-      filters: requirements
+      productId: product._id,
+      product,
+      score: finalScore,
+      compatibility,
+      reasons: this.generateReasons(product, compatibility, requirements),
+      scores
     };
   }
 

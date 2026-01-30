@@ -23,7 +23,7 @@ module.exports = {
     COMPATIBLE_PRODUCTS: 10,
 
     // Số lượng sản phẩm để fetch từ product service để filter và score
-    PRODUCT_FETCH_LIMIT: 200,
+    PRODUCT_FETCH_LIMIT: 30,
   },
 
   // ============================================
@@ -143,7 +143,7 @@ module.exports = {
     POWER_OVERHEAD: 0.2, // Thêm 20% overhead
 
     // Số lượng sản phẩm để fetch để filter và score
-    PRODUCT_FETCH_LIMIT: 200,
+    PRODUCT_FETCH_LIMIT: 30,
   },
 
   // ============================================
@@ -170,7 +170,7 @@ module.exports = {
     PRICE_DIFF_THRESHOLD: 5, // 5%
 
     // Số lượng sản phẩm để fetch từ product service
-    PRODUCT_FETCH_LIMIT: 200,
+    PRODUCT_FETCH_LIMIT: 30,
   },
 
   // ============================================

@@ -24,6 +24,10 @@ app.use(
     max: process.env.API_RATE_LIMIT_MAX_REQUESTS,
     message: "Too many requests from this IP, please try again later.",
     validate: false,
+    skip: (req) => {
+      // Skip rate limiting for behavior tracking endpoints
+      return req.path === "/behavior/track" || req.path === "/behavior/track/batch";
+    },
   })
 );
 

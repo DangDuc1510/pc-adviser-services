@@ -15,5 +15,11 @@ router.get('/similar', validateProductId, recommendationController.getSimilarPro
 // Personalized recommendations
 router.get('/personalized', validateUserIdentifier, recommendationController.getPersonalizedRecommendations);
 
+// Build suggestions for missing components
+router.post('/build-suggestions', recommendationController.getBuildSuggestions);
+
+// Clear cache
+router.post('/clear-cache', recommendationController.clearCache);
+
 module.exports = router;
 

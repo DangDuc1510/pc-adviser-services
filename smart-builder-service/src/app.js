@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const config = require("./config/env");
 const { connectDatabase } = require("./config/database");
 const { connectRedis } = require("./config/redis");
+const optimizationConfig = require("./utils/optimization-config");
 const { errorHandler } = require("./errors");
 const logger = require("./utils/logger");
 
@@ -90,6 +91,12 @@ const startServer = async () => {
       await connectRedis();
     } catch (redisErr) {
       logger.warn('Redis connection failed, continuing without cache:', redisErr.message);
+    }
+
+    // Log optimization features status
+    if (optimizationConfig.FEATURES.ELASTICSEARCH_RETRIEVAL) {
+      logger.info('Optimization features enabled - using search-service for retrieval');
+      logger.info(`Search Service URL: ${config.SEARCH_SERVICE_URL}`);
     }
 
     // Start listening
